@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'widgets/flickering_grid.dart';
+import 'widgets/backgrounds/flickering_grid.dart';
 
 void main() {
   runApp(const App());
@@ -13,8 +13,17 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: r"Seven's Arcade",
-      home: const FlickeringGrid(color: Colors.red),
+      theme: .from(
+        useMaterial3: true,
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      ),
+      darkTheme: .from(
+        useMaterial3: true,
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple, brightness: .dark),
+      ),
+      themeMode: .system,
+      title: r"Sevent's Flutter Arcade",
+      home: Scaffold(body: const FlickeringGrid(color: Colors.green)),
     );
   }
 }

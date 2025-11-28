@@ -1,5 +1,5 @@
 name: arcade
-description: "A new Flutter project."
+description: "Sevent's Flutter Arcade"
 publish_to: "none"
 
 version: 1.0.0+1
@@ -10,7 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  alien_signals: ^2.0.1
 
 flutter:
   uses-material-design: true
+  assets:
+    - lib/widgets/
+    - lib/widgets/backgrounds

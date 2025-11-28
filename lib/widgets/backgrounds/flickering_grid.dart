@@ -31,7 +31,7 @@ class _RepaintNotifier extends ChangeNotifier {
 
 class _FlickeringGridState extends State<FlickeringGrid>
     with SingleTickerProviderStateMixin<FlickeringGrid> {
-  late final AnimationController controller = AnimationController(
+  late final controller = AnimationController(
     vsync: this,
     duration: widget.duration,
   );
@@ -54,7 +54,7 @@ class _FlickeringGridState extends State<FlickeringGrid>
   void tick() {
     if (squares.isEmpty) return;
 
-    const double dt = 0.016;
+    const dt = 0.016;
     for (int i = 0; i < squares.length; i++) {
       if (random.nextDouble() < widget.flickerChance * dt) {
         squares[i] = random.nextDouble() * widget.maxOpacity;
@@ -68,11 +68,10 @@ class _FlickeringGridState extends State<FlickeringGrid>
       this.size = size;
       cols = (size.width / (widget.squareSize + widget.gridGap)).floor();
       rows = (size.height / (widget.squareSize + widget.gridGap)).floor();
-      squares = List.generate(
+      squares = .generate(
         cols * rows,
         (_) => random.nextDouble() * widget.maxOpacity,
       );
-      repaintNotifier.notify();
     }
   }
 
@@ -88,18 +87,21 @@ class _FlickeringGridState extends State<FlickeringGrid>
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = Size(constraints.maxWidth, constraints.maxHeight);
-        final painter = _FlickeringGridPainter(
-          squares: squares,
-          cols: cols,
-          rows: rows,
-          squareSize: widget.squareSize,
-          gridGap: widget.gridGap,
-          color: widget.color,
-          repaint: repaintNotifier,
-        );
         maybeSetup(size);
 
-        return CustomPaint(size: size, painter: painter, child: widget.child);
+        return CustomPaint(
+          size: size,
+          painter: _FlickeringGridPainter(
+            squares: squares,
+            cols: cols,
+            rows: rows,
+            squareSize: widget.squareSize,
+            gridGap: widget.gridGap,
+            color: widget.color,
+            repaint: repaintNotifier,
+          ),
+          child: widget.child,
+        );
       },
     );
   }
@@ -125,7 +127,7 @@ class _FlickeringGridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
+    final paint = Paint()..style = .fill;
     for (int i = 0; i < cols; i++) {
       for (int j = 0; j < rows; j++) {
         final index = i * rows + j;
@@ -135,7 +137,7 @@ class _FlickeringGridPainter extends CustomPainter {
         final y = j * (squareSize + gridGap);
 
         paint.color = color.withValues(alpha: squares.elementAt(index));
-        canvas.drawRect(Rect.fromLTWH(x, y, squareSize, squareSize), paint);
+        canvas.drawRect(.fromLTWH(x, y, squareSize, squareSize), paint);
       }
     }
   }
