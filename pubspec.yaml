@@ -1,5 +1,5 @@
 name: arcade
-description: "Sevent's Flutter Arcade"
+description: "Create stunning user interfaces with beautifully crafted Flutter widgets."
 publish_to: "none"
 homepage: "https://arcade.medz.dev"
 repository: https://github.com/medz/flutter-arcade-ui
@@ -12,6 +12,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
