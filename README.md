@@ -1,16 +1,33 @@
-# arcade
+# Arcade UI
 
-A new Flutter project.
+Create stunning user interfaces with beautifully crafted Flutter widgets.
 
-## Getting Started
+## About
 
-This project is a starting point for a Flutter application.
+**Arcade UI** is not a package — it's a collection of exquisite, ready-to-use UI widgets for Flutter. Browse our showcase, find the widgets you love, and copy them directly into your project.
 
-A few resources to get you started if this is your first Flutter project:
+No dependency or few dependencies. No version conflicts. Just beautiful code that you own.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## How to Use
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Visit the [Arcade UI website](https://arcade.sevendocs.cn)
+2. Browse the widget gallery
+3. Find the widget you want
+4. Copy the code into your Flutter project
+5. Customize it to fit your needs
+
+## Widgets
+
+### Backgrounds
+
+| Widget | Description |
+|-----------|-------------|
+| **FlickeringGrid** | A mesmerizing animated grid background with flickering cells |
+
+## Contributing
+
+We welcome contributions! If you have ideas for new widgets or improvements to existing ones, feel free to open an issue or submit a pull request.
+
+## License
+
+MIT License - feel free to use these widgets in your personal and commercial projects.
