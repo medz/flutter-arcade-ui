@@ -14,5 +14,4 @@ dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - lib/widgets/
-    - lib/widgets/backgrounds
+    - lib/widgets/backgrounds/

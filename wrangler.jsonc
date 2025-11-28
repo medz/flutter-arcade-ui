@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "compatibility_date": "2025-11-28",
+  "name": "fluter-arcade",
+  "main": "worker.ts",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "build/web",
+    "not_found_handling": "single-page-application",
+  },
+  "route": { "custom_domain": true, "pattern": "arcade.medz.dev" },
+}

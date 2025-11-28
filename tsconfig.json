@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    "types": ["./worker-configuration.d.ts"]
+  },
+  "files": ["./worker.ts"]
+}

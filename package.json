@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "scripts": {
+    "types": "wrangler types",
+    "build": "flutter build web --wasm",
+    "deploy": "wrangler deploy",
+    "predeploy": "bun run build"
+  },
+  "dependencies": {
+    "wrangler": "^4.51.0"
+  }
+}

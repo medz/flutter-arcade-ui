@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Cloudflare workers
+.wrangler
+node_modules
+worker-configuration.d.ts
