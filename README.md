@@ -10,7 +10,7 @@ No dependency or few dependencies. No version conflicts. Just beautiful code tha
 
 ## How to Use
 
-1. Visit the [Arcade UI website](https://arcade.sevendocs.cn)
+1. Visit the [Arcade UI website](https://arcade.medz.dev)
 2. Browse the widget gallery
 3. Find the widget you want
 4. Copy the code into your Flutter project
@@ -30,4 +30,4 @@ We welcome contributions! If you have ideas for new widgets or improvements to e
 
 ## License
 
-MIT License - feel free to use these widgets in your personal and commercial projects.
+[MIT License](LICENSE) - feel free to use these widgets in your personal and commercial projects.

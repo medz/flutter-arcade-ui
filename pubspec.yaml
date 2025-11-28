@@ -1,6 +1,8 @@
 name: arcade
 description: "Sevent's Flutter Arcade"
 publish_to: "none"
+homepage: "https://arcade.medz.dev"
+repository: https://github.com/medz/flutter-arcade-ui
 
 version: 1.0.0+1
 

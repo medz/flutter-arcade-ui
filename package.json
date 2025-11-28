@@ -1,5 +1,6 @@
 {
   "private": true,
+  "homepage": "https://arcade.medz.dev",
   "scripts": {
     "types": "wrangler types",
     "build": "flutter build web --wasm",
