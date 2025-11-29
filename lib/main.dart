@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide StarBorder;
 import 'package:flutter/services.dart';
 
 import 'widgets/backgrounds/black_hole_background.dart';
 import 'widgets/backgrounds/flickering_grid.dart';
 import 'widgets/navigations/dock.dart';
 import 'widgets/navigations/floating_dock.dart';
+import 'widgets/borders/star_border.dart';
 
 void main() {
   runApp(const App());
@@ -114,7 +115,11 @@ class _HomeState extends State<Home> {
       body: PageView(
         controller: _pageController,
         scrollDirection: Axis.vertical,
-        children: const [_FlickeringGridPage(), _BlackHolePage()],
+        children: const [
+          _FlickeringGridPage(),
+          _BlackHolePage(),
+          _StarBorderPage(),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Copy Code',
@@ -239,6 +244,20 @@ class _BlackHolePage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StarBorderPage extends StatelessWidget {
+  const _StarBorderPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: StarBorder(
+        color: Colors.green,
+        child: OutlinedButton(onPressed: null, child: Text('Star Border')),
       ),
     );
   }
