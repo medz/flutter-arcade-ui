@@ -130,6 +130,8 @@ class _FloatingDockIcon extends StatefulWidget {
 }
 
 class _FloatingDockIconState extends State<_FloatingDockIcon> {
+  bool _isHovered = false;
+
   double _getScale() {
     if (widget.mouseX == null) return 1.0;
 
@@ -156,45 +158,98 @@ class _FloatingDockIconState extends State<_FloatingDockIcon> {
       widget.item.decoration,
     );
 
-    return GestureDetector(
-      onTap: widget.item.onTap,
-      child: TweenAnimationBuilder<double>(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        tween: Tween(begin: widget.baseSize, end: size),
-        builder: (context, animatedSize, child) {
-          final yOffset = widget.baseSize - animatedSize;
-          final radius = animatedSize * 0.25;
-          return SizedBox(
-            width: animatedSize,
-            height: widget.baseSize,
-            child: OverflowBox(
-              maxWidth: animatedSize,
-              maxHeight: animatedSize,
-              child: Transform.translate(
-                offset: Offset(0, yOffset),
-                child: SizedBox(
-                  width: animatedSize,
-                  height: animatedSize,
-                  child: DecoratedBox(
-                    decoration: itemDecoration.copyWith(
-                      borderRadius:
-                          itemDecoration.borderRadius ??
-                          BorderRadius.circular(radius),
-                    ),
-                    child: Center(
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.item.onTap,
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          tween: Tween(begin: widget.baseSize, end: size),
+          builder: (context, animatedSize, child) {
+            final yOffset = widget.baseSize - animatedSize;
+            final radius = animatedSize * 0.25;
+            return SizedBox(
+              width: animatedSize,
+              height: widget.baseSize,
+              child: OverflowBox(
+                maxWidth: animatedSize,
+                maxHeight: animatedSize,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Transform.translate(
+                      offset: Offset(0, yOffset),
                       child: SizedBox(
-                        width: animatedSize * 0.5,
-                        height: animatedSize * 0.5,
-                        child: FittedBox(child: widget.item.icon),
+                        width: animatedSize,
+                        height: animatedSize,
+                        child: DecoratedBox(
+                          decoration: itemDecoration.copyWith(
+                            borderRadius:
+                                itemDecoration.borderRadius ??
+                                BorderRadius.circular(radius),
+                          ),
+                          child: Center(
+                            child: SizedBox(
+                              width: animatedSize * 0.5,
+                              height: animatedSize * 0.5,
+                              child: FittedBox(child: widget.item.icon),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    if (widget.item.title != null)
+                      Positioned(
+                        bottom: animatedSize - yOffset + 6,
+                        left: animatedSize / 2,
+                        child: TweenAnimationBuilder<double>(
+                          duration: const Duration(milliseconds: 150),
+                          tween: Tween(begin: 0.0, end: _isHovered ? 1.0 : 0.0),
+                          builder: (context, opacity, _) {
+                            if (opacity == 0) return const SizedBox.shrink();
+                            return FractionalTranslation(
+                              translation: const Offset(-0.5, 0),
+                              child: Opacity(
+                                opacity: opacity,
+                                child: Transform.translate(
+                                  offset: Offset(0, 8 * (1 - opacity)),
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF5F5F5),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: const Color(0xFFE0E0E0),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      child: Text(
+                                        widget.item.title!,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF404040),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -202,10 +257,16 @@ class _FloatingDockIconState extends State<_FloatingDockIcon> {
 
 class FloatingDockItem {
   final Widget icon;
+  final String? title;
   final BoxDecoration? decoration;
   final VoidCallback? onTap;
 
-  const FloatingDockItem({required this.icon, this.decoration, this.onTap});
+  const FloatingDockItem({
+    required this.icon,
+    this.title,
+    this.decoration,
+    this.onTap,
+  });
 }
 
 BoxDecoration _mergeDecoration(BoxDecoration base, BoxDecoration? override) {
