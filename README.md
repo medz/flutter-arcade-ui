@@ -24,6 +24,12 @@ No dependency or few dependencies. No version conflicts. Just beautiful code tha
 |-----------|-------------|
 | **FlickeringGrid** | A mesmerizing animated grid background with flickering cells |
 
+### Dock
+
+| Widget | Description |
+|-----------|-------------|
+| **Dock** | A macOS-style dock with magnifying icons as you hover over them |
+
 ## Contributing
 
 We welcome contributions! If you have ideas for new widgets or improvements to existing ones, feel free to open an issue or submit a pull request.

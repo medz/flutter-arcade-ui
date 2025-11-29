@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'widgets/backgrounds/flickering_grid.dart';
+import 'widgets/dock.dart';
 
 void main() {
   runApp(const App());
@@ -13,15 +14,15 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: .from(
+      theme: ThemeData.from(
         useMaterial3: true,
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      darkTheme: .from(
+      darkTheme: ThemeData.from(
         useMaterial3: true,
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple, brightness: .dark),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, brightness: Brightness.dark),
       ),
-      themeMode: .system,
+      themeMode: ThemeMode.system,
       title: r"Flutter Arcade UI",
       home: const Home(),
     );
@@ -34,21 +35,57 @@ class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: const FlickeringGrid(
+      body: FlickeringGrid(
         color: Colors.green,
         child: Center(
-          child: Text(
-            'Arcade UI',
-            style: TextStyle(fontSize: 36, fontWeight: .w500),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Arcade UI',
+                style: TextStyle(fontSize: 36, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 80),
+              Dock(
+                itemScale: 1.5,
+                items: [
+                  DockIcon(
+                    child: Icon(Icons.home, color: Colors.white),
+                    onTap: () {},
+                  ),
+                  DockIcon(
+                    child: Icon(Icons.search, color: Colors.white),
+                    onTap: () {},
+                  ),
+                  DockIcon(
+                    child: Icon(Icons.mail, color: Colors.white),
+                    onTap: () {},
+                  ),
+                  const DockSeparator(),
+                  DockIcon(
+                    child: Icon(Icons.notifications, color: Colors.white),
+                    onTap: () {},
+                  ),
+                  DockIcon(
+                    child: Icon(Icons.settings, color: Colors.white),
+                    onTap: () {},
+                  ),
+                  DockIcon(
+                    child: Icon(Icons.person, color: Colors.white),
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'Copy ',
+        tooltip: 'Copy Code',
         onPressed: () async {
           final code = await DefaultAssetBundle.of(
             context,
-          ).loadString('lib/widgets/backgrounds/flickering_grid.dart');
+          ).loadString('lib/widgets/dock.dart');
           await Clipboard.setData(ClipboardData(text: code));
           if (context.mounted) {
             ScaffoldMessenger.of(
