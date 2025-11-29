@@ -278,8 +278,6 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
 
   @override
   Widget build(BuildContext context) {
-    // final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return LayoutBuilder(
       builder: (context, constraints) {
         _setSize(Size(constraints.maxWidth, constraints.maxHeight));
