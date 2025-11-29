@@ -29,6 +29,10 @@ No dependency or few dependencies. No version conflicts. Just beautiful code tha
 | Widget | Description |
 |-----------|-------------|
 | **Dock** | A macOS-style dock with magnifying icons on hover |
+| **DockIcon** | An icon item for use within a Dock |
+| **DockSeparator** | A visual separator between Dock icon groups |
+| **FloatingDock** | A floating dock with magnifying effect and hover tooltips |
+| **FloatingDockItem** | A data class for FloatingDock items |
 
 ## Contributing
 

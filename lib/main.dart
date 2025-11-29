@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'widgets/backgrounds/flickering_grid.dart';
 import 'widgets/navigations/dock.dart';
+import 'widgets/navigations/floating_dock.dart';
 
 void main() {
   runApp(const App());
@@ -72,6 +73,14 @@ class Home extends StatelessWidget {
             ),
             child: const Text('Dock'),
           ),
+          SimpleDialogOption(
+            onPressed: () => _copyWidgetCode(
+              context,
+              'FloatingDock',
+              'lib/widgets/navigations/floating_dock.dart',
+            ),
+            child: const Text('FloatingDock'),
+          ),
         ],
       ),
     );
@@ -117,6 +126,39 @@ class Home extends StatelessWidget {
                   ),
                   DockIcon(
                     child: Icon(Icons.person, color: Colors.white),
+                    onTap: () {},
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+              FloatingDock(
+                items: [
+                  FloatingDockItem(
+                    icon: Icon(Icons.home, color: Colors.grey[700]),
+                    onTap: () {},
+                  ),
+                  FloatingDockItem(
+                    icon: Icon(Icons.terminal, color: Colors.grey[700]),
+                    onTap: () {},
+                  ),
+                  FloatingDockItem(
+                    icon: Icon(Icons.select_all, color: Colors.grey[700]),
+                    onTap: () {},
+                  ),
+                  FloatingDockItem(
+                    icon: Icon(Icons.change_history, color: Colors.grey[700]),
+                    onTap: () {},
+                  ),
+                  FloatingDockItem(
+                    icon: Icon(Icons.build, color: Colors.grey[700]),
+                    onTap: () {},
+                  ),
+                  FloatingDockItem(
+                    icon: Icon(Icons.close, color: Colors.grey[700]),
+                    onTap: () {},
+                  ),
+                  FloatingDockItem(
+                    icon: Icon(Icons.code, color: Colors.grey[700]),
                     onTap: () {},
                   ),
                 ],
