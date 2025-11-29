@@ -1,24 +1,24 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
-class StarBorder extends StatefulWidget {
+class GlidingGlowBox extends StatefulWidget {
   final Widget child;
   final Color color;
   final Duration speed;
   final double borderWidth;
 
-  const StarBorder({
+  const GlidingGlowBox({
     super.key,
     required this.child,
-    this.color = Colors.white,
+    this.color = const Color(0xFFE0E0E0),
     this.speed = const Duration(seconds: 6),
     this.borderWidth = 3.0,
   });
 
   @override
-  State<StarBorder> createState() => _StarBorderState();
+  State<GlidingGlowBox> createState() => _GlidingGlowBoxState();
 }
 
-class _StarBorderState extends State<StarBorder>
+class _GlidingGlowBoxState extends State<GlidingGlowBox>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
@@ -41,7 +41,7 @@ class _StarBorderState extends State<StarBorder>
       animation: _controller,
       builder: (context, child) {
         return CustomPaint(
-          painter: _StarBorderPainter(
+          painter: _GlidingGlowBoxPainter(
             progress: _controller.value,
             color: widget.color,
             borderWidth: widget.borderWidth,
@@ -57,12 +57,12 @@ class _StarBorderState extends State<StarBorder>
   }
 }
 
-class _StarBorderPainter extends CustomPainter {
+class _GlidingGlowBoxPainter extends CustomPainter {
   final double progress;
   final Color color;
   final double borderWidth;
 
-  _StarBorderPainter({
+  _GlidingGlowBoxPainter({
     required this.progress,
     required this.color,
     required this.borderWidth,
@@ -143,7 +143,7 @@ class _StarBorderPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _StarBorderPainter oldDelegate) {
+  bool shouldRepaint(covariant _GlidingGlowBoxPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.color != color ||
         oldDelegate.borderWidth != borderWidth;

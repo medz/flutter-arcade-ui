@@ -35,6 +35,12 @@ No dependency or few dependencies. No version conflicts. Just beautiful code tha
 | **FloatingDock** | A floating dock with magnifying effect and hover tooltips |
 | **FloatingDockItem** | A data class for FloatingDock items |
 
+### Borders
+
+| Widget | Description |
+|-----------|-------------|
+| **GlidingGlowBox** | A container with gliding glow spots that move along the top and bottom edges |
+
 ## Contributing
 
 We welcome contributions! If you have ideas for new widgets or improvements to existing ones, feel free to open an issue or submit a pull request.

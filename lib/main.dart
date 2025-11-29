@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart' hide StarBorder;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'widgets/backgrounds/black_hole_background.dart';
 import 'widgets/backgrounds/flickering_grid.dart';
 import 'widgets/navigations/dock.dart';
 import 'widgets/navigations/floating_dock.dart';
-import 'widgets/borders/star_border.dart';
+import 'widgets/borders/gliding_glow_box.dart';
 
 void main() {
   runApp(const App());
@@ -104,6 +104,14 @@ class _HomeState extends State<Home> {
             ),
             child: const Text('FloatingDock'),
           ),
+          SimpleDialogOption(
+            onPressed: () => _copyWidgetCode(
+              context,
+              'GlidingGlowBox',
+              'lib/widgets/borders/gliding_glow_box.dart',
+            ),
+            child: const Text('GlidingGlowBox'),
+          ),
         ],
       ),
     );
@@ -118,7 +126,7 @@ class _HomeState extends State<Home> {
         children: const [
           _FlickeringGridPage(),
           _BlackHolePage(),
-          _StarBorderPage(),
+          _GlidingGlowBoxPage(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -249,15 +257,15 @@ class _BlackHolePage extends StatelessWidget {
   }
 }
 
-class _StarBorderPage extends StatelessWidget {
-  const _StarBorderPage();
+class _GlidingGlowBoxPage extends StatelessWidget {
+  const _GlidingGlowBoxPage();
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: StarBorder(
+      child: GlidingGlowBox(
         color: Colors.green,
-        child: OutlinedButton(onPressed: null, child: Text('Star Border')),
+        child: OutlinedButton(onPressed: null, child: Text('Gliding Glow Box')),
       ),
     );
   }
