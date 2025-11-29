@@ -114,7 +114,6 @@ class _HomeState extends State<Home> {
       body: PageView(
         controller: _pageController,
         scrollDirection: Axis.vertical,
-
         children: const [_FlickeringGridPage(), _BlackHolePage()],
       ),
       floatingActionButton: FloatingActionButton(
