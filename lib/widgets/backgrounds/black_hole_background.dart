@@ -23,9 +23,14 @@ class BlackHoleBackground extends StatefulWidget {
   State<BlackHoleBackground> createState() => _BlackHoleBackgroundState();
 }
 
+class _RepaintNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+
 class _BlackHoleBackgroundState extends State<BlackHoleBackground>
     with SingleTickerProviderStateMixin {
   late Ticker _ticker;
+  final _repaintNotifier = _RepaintNotifier();
 
   List<_Disc> _discs = [];
   List<List<_Point>> _lines = [];
@@ -48,6 +53,7 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
   @override
   void dispose() {
     _ticker.dispose();
+    _repaintNotifier.dispose();
     super.dispose();
   }
 
@@ -273,7 +279,7 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
     if (_rect == Size.zero) return;
     _moveDiscs();
     _moveParticles();
-    setState(() {});
+    _repaintNotifier.notify();
   }
 
   @override
@@ -294,6 +300,7 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
                 startDisc: _startDisc,
                 strokeColor: widget.strokeColor,
                 particleColor: widget.particleColor,
+                repaint: _repaintNotifier,
               ),
             ),
             if (widget.child != null) widget.child!,
@@ -321,6 +328,7 @@ class _BlackHolePainter extends CustomPainter {
     required this.startDisc,
     required this.strokeColor,
     required this.particleColor,
+    super.repaint,
   });
 
   @override
@@ -390,7 +398,11 @@ class _BlackHolePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _BlackHolePainter oldDelegate) => true;
+  bool shouldRepaint(covariant _BlackHolePainter oldDelegate) {
+    return strokeColor != oldDelegate.strokeColor ||
+        particleColor != oldDelegate.particleColor ||
+        linesPicture != oldDelegate.linesPicture;
+  }
 }
 
 class _Disc {
