@@ -110,70 +110,18 @@ class _StarBorderPainter extends CustomPainter {
     // Top glow - moves from left to right
     final topX = -glowWidth / 2 + progress * (moveRange + glowWidth);
     final topY = glowHeight / 2;
-    final topLeftEdge = topX - glowWidth / 2;
-    final topRightEdge = topX + glowWidth / 2;
-    final topOpacity = _calculateCornerOpacity(
-      topLeftEdge,
-      topRightEdge,
-      size.width,
-    );
-    _drawGlow(canvas, Offset(topX, topY), glowWidth, glowHeight, topOpacity);
+    _drawGlow(canvas, Offset(topX, topY), glowWidth, glowHeight);
 
     // Bottom glow - moves from right to left
     final bottomX =
         size.width + glowWidth / 2 - progress * (moveRange + glowWidth);
     final bottomY = size.height - glowHeight / 2;
-    final bottomLeftEdge = bottomX - glowWidth / 2;
-    final bottomRightEdge = bottomX + glowWidth / 2;
-    final bottomOpacity = _calculateCornerOpacity(
-      bottomLeftEdge,
-      bottomRightEdge,
-      size.width,
-    );
-    _drawGlow(
-      canvas,
-      Offset(bottomX, bottomY),
-      glowWidth,
-      glowHeight,
-      bottomOpacity,
-    );
+    _drawGlow(canvas, Offset(bottomX, bottomY), glowWidth, glowHeight);
 
     canvas.restore();
   }
 
-  double _calculateCornerOpacity(
-    double leftEdge,
-    double rightEdge,
-    double width,
-  ) {
-    final fadeZone = width * 0.1;
-
-    // Left corner: fade based on left edge position
-    if (leftEdge < fadeZone) {
-      final leftOpacity = (leftEdge / fadeZone).clamp(0.2, 1.0);
-      // Right corner: also check right edge
-      if (rightEdge > width - fadeZone) {
-        final rightOpacity = ((width - rightEdge) / fadeZone).clamp(0.2, 1.0);
-        return (leftOpacity * rightOpacity).clamp(0.2, 1.0);
-      }
-      return leftOpacity;
-    }
-
-    // Right corner: fade based on right edge position
-    if (rightEdge > width - fadeZone) {
-      return ((width - rightEdge) / fadeZone).clamp(0.2, 1.0);
-    }
-
-    return 1.0;
-  }
-
-  void _drawGlow(
-    Canvas canvas,
-    Offset center,
-    double width,
-    double height,
-    double opacity,
-  ) {
+  void _drawGlow(Canvas canvas, Offset center, double width, double height) {
     // Use scale transform to properly render ellipse with RadialGradient
     final scaleX = width / height;
 
@@ -186,10 +134,7 @@ class _StarBorderPainter extends CustomPainter {
 
     final paint = Paint()
       ..shader = RadialGradient(
-        colors: [
-          color.withValues(alpha: 0.8 * opacity),
-          color.withValues(alpha: 0),
-        ],
+        colors: [color.withValues(alpha: 0.8), color.withValues(alpha: 0)],
         stops: const [0.0, 1.0],
       ).createShader(circleRect);
 
