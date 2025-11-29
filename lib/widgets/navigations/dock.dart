@@ -10,6 +10,7 @@ class Dock extends StatefulWidget {
   final double gap;
   final EdgeInsetsGeometry? padding;
   final BoxDecoration? decoration;
+  final BoxDecoration? itemDecoration;
 
   const Dock({
     super.key,
@@ -22,6 +23,7 @@ class Dock extends StatefulWidget {
     this.gap = 8.0,
     this.padding,
     this.decoration,
+    this.itemDecoration,
   });
 
   @override
@@ -31,6 +33,16 @@ class Dock extends StatefulWidget {
 class _DockState extends State<Dock> {
   final _mousePositionNotifier = ValueNotifier<Offset?>(null);
 
+  static const _defaultDecoration = BoxDecoration(
+    color: Color(0x80000000),
+    borderRadius: BorderRadius.all(Radius.circular(16)),
+  );
+
+  static const _defaultItemDecoration = BoxDecoration(
+    color: Color(0xFF2A2A2A),
+    borderRadius: BorderRadius.all(Radius.circular(12)),
+  );
+
   @override
   void dispose() {
     _mousePositionNotifier.dispose();
@@ -39,6 +51,12 @@ class _DockState extends State<Dock> {
 
   @override
   Widget build(BuildContext context) {
+    final decoration = _mergeDecoration(_defaultDecoration, widget.decoration);
+    final itemDecoration = _mergeDecoration(
+      _defaultItemDecoration,
+      widget.itemDecoration,
+    );
+
     return MouseRegion(
       onHover: (event) {
         final renderBox = context.findRenderObject() as RenderBox?;
@@ -51,17 +69,12 @@ class _DockState extends State<Dock> {
       },
       onExit: (_) => _mousePositionNotifier.value = null,
       child: DecoratedBox(
-        decoration:
-            widget.decoration ??
-            BoxDecoration(
-              color: const Color(0x80000000),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0x40FFFFFF), width: 1),
-            ),
+        decoration: decoration,
         child: Padding(
           padding: widget.padding ?? const EdgeInsets.all(8.0),
-          child: _MousePositionProvider(
+          child: _DockConfig(
             notifier: _mousePositionNotifier,
+            itemDecoration: itemDecoration,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -131,20 +144,24 @@ class _DockState extends State<Dock> {
   }
 }
 
-class _MousePositionProvider extends InheritedWidget {
+class _DockConfig extends InheritedWidget {
   final ValueNotifier<Offset?> notifier;
+  final BoxDecoration itemDecoration;
 
-  const _MousePositionProvider({required this.notifier, required super.child});
+  const _DockConfig({
+    required this.notifier,
+    required this.itemDecoration,
+    required super.child,
+  });
 
-  static ValueNotifier<Offset?>? of(BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<_MousePositionProvider>()
-        ?.notifier;
+  static _DockConfig? of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_DockConfig>();
   }
 
   @override
-  bool updateShouldNotify(_MousePositionProvider oldWidget) =>
-      notifier != oldWidget.notifier;
+  bool updateShouldNotify(_DockConfig oldWidget) =>
+      notifier != oldWidget.notifier ||
+      itemDecoration != oldWidget.itemDecoration;
 }
 
 class _DockItem extends StatelessWidget {
@@ -179,10 +196,10 @@ class _DockItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final notifier = _MousePositionProvider.of(context)!;
+    final config = _DockConfig.of(context)!;
 
     return ValueListenableBuilder<Offset?>(
-      valueListenable: notifier,
+      valueListenable: config.notifier,
       builder: (context, mouseOffset, _) {
         final scale = _calcScale(mouseOffset, maxScale);
         final childScale = _calcScale(mouseOffset, itemScale);
@@ -233,31 +250,30 @@ class _DockItemScaleProvider extends InheritedWidget {
 
 class DockIcon extends StatelessWidget {
   final Widget child;
-  final Color? backgroundColor;
-  final BorderRadius? borderRadius;
+  final BoxDecoration? decoration;
   final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
 
   const DockIcon({
     super.key,
     required this.child,
-    this.backgroundColor,
-    this.borderRadius,
+    this.decoration,
     this.padding,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final config = _DockConfig.of(context);
+    final baseDecoration = config?.itemDecoration ?? const BoxDecoration();
+    final mergedDecoration = _mergeDecoration(baseDecoration, decoration);
+
     return GestureDetector(
       onTap: onTap,
       child: Padding(
         padding: padding ?? EdgeInsets.zero,
         child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: backgroundColor ?? const Color(0xFF2A2A2A),
-            borderRadius: borderRadius ?? BorderRadius.circular(12),
-          ),
+          decoration: mergedDecoration,
           child: Center(
             child: Builder(
               builder: (context) {
@@ -299,4 +315,19 @@ class DockSeparator extends StatelessWidget {
       ),
     );
   }
+}
+
+BoxDecoration _mergeDecoration(BoxDecoration base, BoxDecoration? override) {
+  if (override == null) return base;
+  return BoxDecoration(
+    color: override.color ?? base.color,
+    image: override.image ?? base.image,
+    border: override.border ?? base.border,
+    borderRadius: override.borderRadius ?? base.borderRadius,
+    boxShadow: override.boxShadow ?? base.boxShadow,
+    gradient: override.gradient ?? base.gradient,
+    backgroundBlendMode:
+        override.backgroundBlendMode ?? base.backgroundBlendMode,
+    shape: override.shape,
+  );
 }
