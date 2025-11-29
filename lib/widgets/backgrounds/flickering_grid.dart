@@ -68,7 +68,7 @@ class _FlickeringGridState extends State<FlickeringGrid>
       this.size = size;
       cols = (size.width / (widget.squareSize + widget.gridGap)).floor();
       rows = (size.height / (widget.squareSize + widget.gridGap)).floor();
-      squares = .generate(
+      squares = List.generate(
         cols * rows,
         (_) => random.nextDouble() * widget.maxOpacity,
       );
@@ -127,7 +127,7 @@ class _FlickeringGridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = .fill;
+    final paint = Paint()..style = PaintingStyle.fill;
     for (int i = 0; i < cols; i++) {
       for (int j = 0; j < rows; j++) {
         final index = i * rows + j;
@@ -137,7 +137,7 @@ class _FlickeringGridPainter extends CustomPainter {
         final y = j * (squareSize + gridGap);
 
         paint.color = color.withValues(alpha: squares.elementAt(index));
-        canvas.drawRect(.fromLTWH(x, y, squareSize, squareSize), paint);
+        canvas.drawRect(Rect.fromLTWH(x, y, squareSize, squareSize), paint);
       }
     }
   }
