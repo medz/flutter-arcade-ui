@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'widgets/backgrounds/flickering_grid.dart';
-import 'widgets/dock.dart';
+import 'widgets/navigations/dock.dart';
 
 void main() {
   runApp(const App());
@@ -20,7 +20,10 @@ class App extends StatelessWidget {
       ),
       darkTheme: ThemeData.from(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: Brightness.dark,
+        ),
       ),
       themeMode: ThemeMode.system,
       title: r"Flutter Arcade UI",
@@ -31,6 +34,48 @@ class App extends StatelessWidget {
 
 class Home extends StatelessWidget {
   const Home({super.key});
+
+  Future<void> _copyWidgetCode(
+    BuildContext context,
+    String name,
+    String path,
+  ) async {
+    final code = await DefaultAssetBundle.of(context).loadString(path);
+    await Clipboard.setData(ClipboardData(text: code));
+    if (context.mounted) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$name code copied to clipboard!')),
+      );
+    }
+  }
+
+  void _showCopyDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Select Widget to Copy'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => _copyWidgetCode(
+              context,
+              'FlickeringGrid',
+              'lib/widgets/backgrounds/flickering_grid.dart',
+            ),
+            child: const Text('FlickeringGrid'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => _copyWidgetCode(
+              context,
+              'Dock',
+              'lib/widgets/navigations/dock.dart',
+            ),
+            child: const Text('Dock'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,17 +127,7 @@ class Home extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Copy Code',
-        onPressed: () async {
-          final code = await DefaultAssetBundle.of(
-            context,
-          ).loadString('lib/widgets/dock.dart');
-          await Clipboard.setData(ClipboardData(text: code));
-          if (context.mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Copy to clipboard!')));
-          }
-        },
+        onPressed: () => _showCopyDialog(context),
         child: const Icon(Icons.copy),
       ),
     );

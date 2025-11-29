@@ -24,11 +24,11 @@ No dependency or few dependencies. No version conflicts. Just beautiful code tha
 |-----------|-------------|
 | **FlickeringGrid** | A mesmerizing animated grid background with flickering cells |
 
-### Dock
+### Navigations
 
 | Widget | Description |
 |-----------|-------------|
-| **Dock** | A macOS-style dock with magnifying icons as you hover over them |
+| **Dock** | A macOS-style dock with magnifying icons on hover |
 
 ## Contributing
 

@@ -28,33 +28,12 @@ class Dock extends StatefulWidget {
   State<Dock> createState() => _DockState();
 }
 
-class _DockState extends State<Dock> with SingleTickerProviderStateMixin {
+class _DockState extends State<Dock> {
   final _mousePositionNotifier = ValueNotifier<Offset?>(null);
-  late final AnimationController _sizeController;
-
-  @override
-  void initState() {
-    super.initState();
-    _sizeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-    _mousePositionNotifier.addListener(_onMousePositionChanged);
-  }
-
-  void _onMousePositionChanged() {
-    if (_mousePositionNotifier.value != null) {
-      _sizeController.forward();
-    } else {
-      _sizeController.reverse();
-    }
-  }
 
   @override
   void dispose() {
-    _mousePositionNotifier.removeListener(_onMousePositionChanged);
     _mousePositionNotifier.dispose();
-    _sizeController.dispose();
     super.dispose();
   }
 
@@ -67,13 +46,10 @@ class _DockState extends State<Dock> with SingleTickerProviderStateMixin {
           final center = renderBox.localToGlobal(
             renderBox.size.center(Offset.zero),
           );
-          final delta = event.position - center;
-          _mousePositionNotifier.value = delta;
+          _mousePositionNotifier.value = event.position - center;
         }
       },
-      onExit: (_) {
-        _mousePositionNotifier.value = null;
-      },
+      onExit: (_) => _mousePositionNotifier.value = null,
       child: DecoratedBox(
         decoration:
             widget.decoration ??
@@ -98,34 +74,26 @@ class _DockState extends State<Dock> with SingleTickerProviderStateMixin {
   }
 
   List<Widget> _buildItems(BuildContext context) {
-    final List<Widget> children = [];
+    final children = <Widget>[];
     final isHorizontal = widget.direction == Axis.horizontal;
-
-    // Calculate logical layout
-    final List<double> itemWidths = [];
-    double totalWidth = 0;
+    final itemWidths = <double>[];
+    var totalWidth = 0.0;
 
     for (final item in widget.items) {
-      double width;
-      if (item is DockSeparator) {
-        final margin =
-            item.margin?.resolve(Directionality.of(context)) ??
-            const EdgeInsets.symmetric(horizontal: 4.0);
-        width = isHorizontal
-            ? item.width + margin.horizontal
-            : item.height + margin.vertical;
-      } else {
-        width = widget.itemSize;
-      }
+      final width = item is DockSeparator
+          ? (isHorizontal ? item.width : item.height) +
+                (item.margin?.resolve(Directionality.of(context)) ??
+                        const EdgeInsets.symmetric(horizontal: 4.0))
+                    .horizontal
+          : widget.itemSize;
       itemWidths.add(width);
       totalWidth += width;
     }
 
     totalWidth += (widget.items.length - 1) * widget.gap;
+    var currentOffset = -totalWidth / 2;
 
-    double currentOffset = -totalWidth / 2;
-
-    for (int i = 0; i < widget.items.length; i++) {
+    for (var i = 0; i < widget.items.length; i++) {
       final item = widget.items[i];
       final width = itemWidths[i];
       final centerOffset = currentOffset + width / 2;
@@ -151,7 +119,7 @@ class _DockState extends State<Dock> with SingleTickerProviderStateMixin {
         children.add(
           SizedBox(
             width: isHorizontal ? widget.gap : 0,
-            height: !isHorizontal ? widget.gap : 0,
+            height: isHorizontal ? 0 : widget.gap,
           ),
         );
       }
@@ -175,9 +143,8 @@ class _MousePositionProvider extends InheritedWidget {
   }
 
   @override
-  bool updateShouldNotify(_MousePositionProvider oldWidget) {
-    return notifier != oldWidget.notifier;
-  }
+  bool updateShouldNotify(_MousePositionProvider oldWidget) =>
+      notifier != oldWidget.notifier;
 }
 
 class _DockItem extends StatelessWidget {
@@ -200,69 +167,45 @@ class _DockItem extends StatelessWidget {
     required this.child,
   });
 
-  double _calculateScale(Offset? mouseOffset) {
+  double _calcScale(Offset? mouseOffset, double targetScale) {
     if (mouseOffset == null) return 1.0;
-
     final itemCenter = direction == Axis.horizontal
         ? Offset(baseOffset, 0)
         : Offset(0, baseOffset);
-
     final dist = (mouseOffset - itemCenter).distance;
-
     if (dist > distance) return 1.0;
-
-    final ratio = 1 - (dist / distance);
-    return 1.0 + (maxScale - 1.0) * ratio;
-  }
-
-  double _calculateItemScale(Offset? mouseOffset) {
-    if (mouseOffset == null) return 1.0;
-
-    final itemCenter = direction == Axis.horizontal
-        ? Offset(baseOffset, 0)
-        : Offset(0, baseOffset);
-
-    final dist = (mouseOffset - itemCenter).distance;
-
-    if (dist > distance) return 1.0;
-
-    final ratio = 1 - (dist / distance);
-    return 1.0 + (itemScale - 1.0) * ratio;
+    return 1.0 + (targetScale - 1.0) * (1 - dist / distance);
   }
 
   @override
   Widget build(BuildContext context) {
-    final mousePositionNotifier = _MousePositionProvider.of(context);
+    final notifier = _MousePositionProvider.of(context)!;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return ValueListenableBuilder<Offset?>(
-          valueListenable: mousePositionNotifier!,
-          builder: (context, mouseOffset, _) {
-            final scale = _calculateScale(mouseOffset);
-            final scaledSize = itemSize * scale;
-            final childScale = _calculateItemScale(mouseOffset);
+    return ValueListenableBuilder<Offset?>(
+      valueListenable: notifier,
+      builder: (context, mouseOffset, _) {
+        final scale = _calcScale(mouseOffset, maxScale);
+        final childScale = _calcScale(mouseOffset, itemScale);
+        final scaledSize = itemSize * scale;
 
-            return TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
-              tween: Tween(begin: 1.0, end: scale),
-              builder: (context, value, _) {
-                final size = itemSize * value;
-                return SizedBox(
-                  width: direction == Axis.horizontal ? scaledSize : itemSize,
-                  height: direction == Axis.vertical ? scaledSize : itemSize,
-                  child: Align(
-                    alignment: direction == Axis.horizontal
-                        ? Alignment.bottomCenter
-                        : Alignment.centerLeft,
-                    child: _DockItemScaleProvider(
-                      scale: childScale,
-                      child: SizedBox(width: size, height: size, child: child),
-                    ),
-                  ),
-                );
-              },
+        return TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          tween: Tween(begin: 1.0, end: scale),
+          builder: (context, animatedScale, _) {
+            final size = itemSize * animatedScale;
+            return SizedBox(
+              width: direction == Axis.horizontal ? scaledSize : itemSize,
+              height: direction == Axis.vertical ? scaledSize : itemSize,
+              child: Align(
+                alignment: direction == Axis.horizontal
+                    ? Alignment.bottomCenter
+                    : Alignment.centerLeft,
+                child: _DockItemScaleProvider(
+                  scale: childScale,
+                  child: SizedBox(width: size, height: size, child: child),
+                ),
+              ),
             );
           },
         );
@@ -276,16 +219,16 @@ class _DockItemScaleProvider extends InheritedWidget {
 
   const _DockItemScaleProvider({required this.scale, required super.child});
 
-  static double? of(BuildContext context) {
+  static double of(BuildContext context) {
     return context
-        .dependOnInheritedWidgetOfExactType<_DockItemScaleProvider>()
-        ?.scale;
+            .dependOnInheritedWidgetOfExactType<_DockItemScaleProvider>()
+            ?.scale ??
+        1.0;
   }
 
   @override
-  bool updateShouldNotify(_DockItemScaleProvider oldWidget) {
-    return scale != oldWidget.scale;
-  }
+  bool updateShouldNotify(_DockItemScaleProvider oldWidget) =>
+      scale != oldWidget.scale;
 }
 
 class DockIcon extends StatelessWidget {
@@ -306,8 +249,6 @@ class DockIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scale = _DockItemScaleProvider.of(context) ?? 1.0;
-
     return GestureDetector(
       onTap: onTap,
       child: Padding(
@@ -318,7 +259,12 @@ class DockIcon extends StatelessWidget {
             borderRadius: borderRadius ?? BorderRadius.circular(12),
           ),
           child: Center(
-            child: Transform.scale(scale: scale, child: child),
+            child: Builder(
+              builder: (context) {
+                final scale = _DockItemScaleProvider.of(context);
+                return Transform.scale(scale: scale, child: child);
+              },
+            ),
           ),
         ),
       ),
@@ -347,9 +293,9 @@ class DockSeparator extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: color ?? const Color(0x40FFFFFF),
-          borderRadius: BorderRadius.circular(this.width / 2),
+          borderRadius: BorderRadius.circular(width / 2),
         ),
-        child: SizedBox(width: this.width, height: this.height),
+        child: SizedBox(width: width, height: height),
       ),
     );
   }
