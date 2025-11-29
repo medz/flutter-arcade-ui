@@ -54,6 +54,8 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
   void dispose() {
     _ticker.dispose();
     _repaintNotifier.dispose();
+    _linesPicture?.dispose();
+    _linesPicture = null;
     super.dispose();
   }
 
@@ -161,8 +163,11 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
       }
     }
 
+    // Dispose old picture before creating new one
+    _linesPicture?.dispose();
+    _linesPicture = null;
+
     if (_clip.path == null) {
-      _linesPicture = null;
       return;
     }
 
@@ -320,6 +325,12 @@ class _BlackHolePainter extends CustomPainter {
   final Color strokeColor;
   final Color particleColor;
 
+  // Reusable paint objects to avoid memory allocations
+  late final Paint _strokePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  late final Paint _particlePaint = Paint();
+
   _BlackHolePainter({
     required this.discs,
     this.linesPicture,
@@ -339,10 +350,7 @@ class _BlackHolePainter extends CustomPainter {
   }
 
   void _drawDiscs(Canvas canvas) {
-    final paint = Paint()
-      ..color = strokeColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+    _strokePaint.color = strokeColor;
 
     canvas.drawOval(
       Rect.fromCenter(
@@ -350,7 +358,7 @@ class _BlackHolePainter extends CustomPainter {
         width: startDisc.w * 2,
         height: startDisc.h * 2,
       ),
-      paint,
+      _strokePaint,
     );
 
     for (int i = 0; i < discs.length; i++) {
@@ -368,7 +376,7 @@ class _BlackHolePainter extends CustomPainter {
           width: disc.w * 2,
           height: disc.h * 2,
         ),
-        paint,
+        _strokePaint,
       );
       if (disc.w < (clip.disc?.w ?? 0) - 5) {
         canvas.restore();
@@ -387,11 +395,10 @@ class _BlackHolePainter extends CustomPainter {
     canvas.save();
     canvas.clipPath(clip.path!);
     for (var particle in particles) {
-      final paint = Paint()
-        ..color = particleColor.withValues(alpha: particle.opacity);
+      _particlePaint.color = particleColor.withValues(alpha: particle.opacity);
       canvas.drawRect(
         Rect.fromLTWH(particle.x, particle.y, particle.r, particle.r),
-        paint,
+        _particlePaint,
       );
     }
     canvas.restore();

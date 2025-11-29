@@ -115,6 +115,9 @@ class _FlickeringGridPainter extends CustomPainter {
   final double gridGap;
   final Color color;
 
+  // Reusable paint object to avoid memory allocations
+  static final Paint _paint = Paint()..style = PaintingStyle.fill;
+
   _FlickeringGridPainter({
     required this.squares,
     required this.cols,
@@ -127,7 +130,6 @@ class _FlickeringGridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
     for (int i = 0; i < cols; i++) {
       for (int j = 0; j < rows; j++) {
         final index = i * rows + j;
@@ -136,8 +138,8 @@ class _FlickeringGridPainter extends CustomPainter {
         final x = i * (squareSize + gridGap);
         final y = j * (squareSize + gridGap);
 
-        paint.color = color.withValues(alpha: squares.elementAt(index));
-        canvas.drawRect(Rect.fromLTWH(x, y, squareSize, squareSize), paint);
+        _paint.color = color.withValues(alpha: squares.elementAt(index));
+        canvas.drawRect(Rect.fromLTWH(x, y, squareSize, squareSize), _paint);
       }
     }
   }
