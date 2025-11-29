@@ -23,6 +23,7 @@ No dependency or few dependencies. No version conflicts. Just beautiful code tha
 | Widget | Description |
 |-----------|-------------|
 | **FlickeringGrid** | A mesmerizing animated grid background with flickering cells |
+| **BlackHoleBackground** | A black hole tunnel effect with animated discs, radial lines, and particles |
 
 ### Navigations
 
