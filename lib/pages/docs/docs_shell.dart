@@ -124,7 +124,9 @@ class DocsSidebar extends StatelessWidget {
                     isSelected: currentPath == '/widgets',
                     onTap: () => context.go('/widgets'),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
                   ...WidgetLoader.groups.map((group) {
                     final widgets = WidgetLoader.getWidgetsByGroup(group);
                     return Column(

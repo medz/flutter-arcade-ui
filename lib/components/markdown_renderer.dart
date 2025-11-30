@@ -16,10 +16,14 @@ class MarkdownRenderer extends StatelessWidget {
   /// Custom preview widgets to use (keyed by identifier)
   final Map<String, Widget>? previewWidgets;
 
+  /// Map of heading titles to GlobalKeys for scrolling
+  final Map<String, GlobalKey>? headingKeys;
+
   const MarkdownRenderer({
     super.key,
     required this.markdown,
     this.previewWidgets,
+    this.headingKeys,
   });
 
   @override
@@ -29,63 +33,130 @@ class MarkdownRenderer extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: parsed.map((segment) {
+      children: parsed.expand((segment) {
         if (segment is _MarkdownSegment) {
-          return MarkdownBody(
-            data: segment.content,
-            selectable: true,
-            onTapLink: (text, href, title) {
-              if (href != null) {
-                launchUrl(Uri.parse(href));
-              }
-            },
-            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
-                .copyWith(
-                  blockSpacing: 16,
-                  h1: Theme.of(context).textTheme.headlineMedium,
-                  h2: Theme.of(context).textTheme.headlineSmall,
-                  h3: Theme.of(context).textTheme.titleLarge,
-                  code: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontFamily: 'monospace',
-                    backgroundColor:
-                        Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[850]
-                        : Colors.grey[200],
-                  ),
-                ),
-          );
+          // Split segment by headings to properly attach keys
+          return _splitByHeadings(segment.content, context);
         } else if (segment is _WidgetPreviewSegment) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: WidgetPreview(
-              identifier: segment.identifier,
-              previewWidget: previewWidgets?[segment.identifier],
+          return [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: WidgetPreview(
+                identifier: segment.identifier,
+                previewWidget: previewWidgets?[segment.identifier],
+              ),
             ),
-          );
+          ];
         } else if (segment is _WidgetCodeSegment) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: FutureBuilder<String>(
-              future: _loadCode(segment.identifier),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return SizedBox(
-                  height: 400,
-                  child: WidgetCode(
-                    code: snapshot.data ?? '// Error loading code',
-                    title: segment.identifier,
-                  ),
-                );
-              },
+          return [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: FutureBuilder<String>(
+                future: _loadCode(segment.identifier),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  return SizedBox(
+                    height: 400,
+                    child: WidgetCode(
+                      code: snapshot.data ?? '// Error loading code',
+                      title: segment.identifier,
+                    ),
+                  );
+                },
+              ),
             ),
-          );
+          ];
         }
 
-        return const SizedBox.shrink();
+        return [const SizedBox.shrink()];
       }).toList(),
     );
+  }
+
+  /// Split markdown content by headings and attach GlobalKeys
+  List<Widget> _splitByHeadings(String content, BuildContext context) {
+    final widgets = <Widget>[];
+    final lines = content.split('\n');
+    final buffer = StringBuffer();
+    String? currentHeading;
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+
+      if (line.trim().startsWith('## ')) {
+        // Save previous section
+        if (buffer.isNotEmpty) {
+          widgets.add(
+            _buildMarkdownWidget(
+              buffer.toString(),
+              context,
+              headingKey: currentHeading != null && headingKeys != null
+                  ? headingKeys![currentHeading]
+                  : null,
+            ),
+          );
+          buffer.clear();
+        }
+
+        // Start new section with this heading
+        currentHeading = line.trim().substring(3).trim();
+        buffer.writeln(line);
+      } else {
+        buffer.writeln(line);
+      }
+    }
+
+    // Add remaining content
+    if (buffer.isNotEmpty) {
+      widgets.add(
+        _buildMarkdownWidget(
+          buffer.toString(),
+          context,
+          headingKey: currentHeading != null && headingKeys != null
+              ? headingKeys![currentHeading]
+              : null,
+        ),
+      );
+    }
+
+    return widgets.isEmpty ? [const SizedBox.shrink()] : widgets;
+  }
+
+  /// Build a markdown widget with optional key
+  Widget _buildMarkdownWidget(
+    String content,
+    BuildContext context, {
+    GlobalKey? headingKey,
+  }) {
+    final markdownBody = MarkdownBody(
+      data: content,
+      selectable: true,
+      onTapLink: (text, href, title) {
+        if (href != null) {
+          launchUrl(Uri.parse(href));
+        }
+      },
+      styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+        blockSpacing: 16,
+        h1: Theme.of(context).textTheme.headlineMedium,
+        h2: Theme.of(context).textTheme.headlineSmall,
+        h3: Theme.of(context).textTheme.titleLarge,
+        code: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontFamily: 'monospace',
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[850]
+              : Colors.grey[200],
+        ),
+      ),
+    );
+
+    if (headingKey != null) {
+      return Container(key: headingKey, child: markdownBody);
+    }
+
+    return markdownBody;
   }
 
   Future<String> _loadCode(String identifier) async {

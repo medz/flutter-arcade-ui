@@ -43,18 +43,21 @@ class _WidgetPreviewState extends State<WidgetPreview>
   }
 
   Future<void> _loadWidget() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     final metadata = WidgetLoader.findByIdentifier(widget.identifier);
     if (metadata != null) {
       // Load DEMO code instead of source code for the Code tab
       final code = await WidgetLoader.loadDemoCode(metadata);
+      if (!mounted) return;
       setState(() {
         _metadata = metadata;
         _sourceCode = code;
         _isLoading = false;
       });
     } else {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
