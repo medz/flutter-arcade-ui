@@ -1,79 +1,67 @@
+A mesmerizing animated grid background with randomly flickering cells. Perfect for creating dynamic, eye-catching backgrounds.
+
 ## Preview
 
 @{WidgetPreview:backgrounds/flickering_grid}
 
 ## Features
 
-- Customizable grid color
-- Smooth flickering animation
-- Responsive grid sizing
-- Child widget support
-- Zero dependencies
+- Smooth flickering animation with random cell opacity changes
+- Fully customizable grid appearance (size, gap, color)
+- Canvas-based rendering for optimal performance
+- Support for child widgets as overlay
+- Zero external dependencies
 
-## Installation
+## Properties
 
-Simply copy the widget code into your project:
-
-1. Create a new file: `lib/widgets/backgrounds/flickering_grid.dart`
-2. Copy the source code (see below)
-3. Import and use in your app
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `color` | `Color` | `Colors.black` | Color of the grid squares |
+| `squareSize` | `double` | `4.0` | Size of each grid square in pixels |
+| `gridGap` | `double` | `6.0` | Gap between grid squares |
+| `flickerChance` | `double` | `0.3` | Probability of a square flickering per frame |
+| `maxOpacity` | `double` | `0.3` | Maximum opacity of the flickering squares |
+| `duration` | `Duration` | `1 second` | Animation loop duration |
+| `child` | `Widget?` | `null` | Optional child widget displayed over the grid |
 
 ## Usage
 
 ```dart
-import 'package:flutter/material.dart';
 import 'widgets/backgrounds/flickering_grid.dart';
 
-class MyPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return FlickeringGrid(
-      color: Colors.green,
-      child: Center(
-        child: Text(
-          'Welcome to Arcade UI',
-          style: TextStyle(fontSize: 48, color: Colors.white),
-        ),
-      ),
-    );
-  }
-}
+FlickeringGrid(
+  color: Colors.deepPurple,
+  child: Center(
+    child: Text('Hello, Arcade UI!'),
+  ),
+)
 ```
 
-## Properties
+## Examples
 
-| Property | Type | Description | Default |
-|----------|------|-------------|---------|
-| `color` | `Color` | The color of the grid lines and flickering effect | Required |
-| `child` | `Widget?` | Child widget to display over the grid | `null` |
-| `gridSize` | `double` | Size of each grid cell | `40.0` |
-| `flickerDuration` | `Duration` | Duration for each flicker animation | `800ms` |
-
-## Customization Examples
-
-### Larger Grid Cells
+### Dense Grid
 
 ```dart
 FlickeringGrid(
   color: Colors.blue,
-  gridSize: 60.0,
-  child: YourContent(),
+  squareSize: 2.0,
+  gridGap: 3.0,
+  maxOpacity: 0.5,
 )
 ```
 
-### Faster Animation
+### Sparse Grid with Slow Animation
 
 ```dart
 FlickeringGrid(
-  color: Colors.purple,
-  flickerDuration: Duration(milliseconds: 400),
-  child: YourContent(),
+  color: Colors.green,
+  squareSize: 8.0,
+  gridGap: 12.0,
+  flickerChance: 0.1,
+  duration: Duration(seconds: 2),
 )
 ```
 
 ## Source Code
 
 @{WidgetCode:backgrounds/flickering_grid}
-
-
-- [FloatingDock](/docs/navigations/floating-dock)
