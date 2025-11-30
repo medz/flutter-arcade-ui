@@ -27,12 +27,9 @@ class MarkdownRenderer extends StatelessWidget {
     // Parse markdown and extract custom directives
     final parsed = _parseCustomSyntax(markdown);
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: parsed.length,
-      itemBuilder: (context, index) {
-        final segment = parsed[index];
-
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: parsed.map((segment) {
         if (segment is _MarkdownSegment) {
           return MarkdownBody(
             data: segment.content,
@@ -87,7 +84,7 @@ class MarkdownRenderer extends StatelessWidget {
         }
 
         return const SizedBox.shrink();
-      },
+      }).toList(),
     );
   }
 

@@ -1,6 +1,4 @@
-# Dock
-
-A macOS-style dock with magnifying icon effect on hover. Icons scale up smoothly when the cursor approaches, creating an iconic interaction pattern.
+Icons scale up smoothly when the cursor approaches, creating an iconic interaction pattern.
 
 ## Preview
 
@@ -112,6 +110,4 @@ Dock(
 
 @{WidgetCode:navigations/dock}
 
-## Related Widgets
 
-- [FloatingDock](/docs/navigations/floating-dock)

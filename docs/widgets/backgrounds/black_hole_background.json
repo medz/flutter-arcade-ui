@@ -1,0 +1,13 @@
+{
+    "name": "BlackHoleBackground",
+    "group": "backgrounds",
+    "description": "A stunning black hole tunnel effect with animated discs and particles.",
+    "sourcePath": "lib/widgets/backgrounds/black_hole_background.dart",
+    "demoPath": "lib/widgets/backgrounds/black_hole_background_demo.dart",
+    "docPath": "widgets/backgrounds/black-hole-background.md",
+    "tags": [
+        "background",
+        "animation",
+        "3d"
+    ]
+}

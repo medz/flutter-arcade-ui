@@ -15,7 +15,7 @@ class FlickeringGridDemo extends StatelessWidget {
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: Colors.black.withOpacity(0.8),
+            color: Colors.black.withValues(alpha: 0.8),
             letterSpacing: 1.5,
           ),
         ),

@@ -1,7 +1,3 @@
-# FlickeringGrid
-
-A mesmerizing animated grid background with randomly flickering cells. Perfect for creating eye-catching hero sections or dynamic backgrounds.
-
 ## Preview
 
 @{WidgetPreview:backgrounds/flickering_grid}
@@ -79,7 +75,5 @@ FlickeringGrid(
 
 @{WidgetCode:backgrounds/flickering_grid}
 
-## Related Widgets
 
-- [BlackHoleBackground](/docs/backgrounds/black-hole-background)
 - [FloatingDock](/docs/navigations/floating-dock)

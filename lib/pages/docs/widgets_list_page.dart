@@ -17,7 +17,7 @@ class _WidgetsListPageState extends State<WidgetsListPage> {
   String _searchQuery = '';
 
   List<WidgetMetadata> get _filteredWidgets {
-    var widgets = WidgetLoader.allWidgets;
+    var widgets = WidgetLoader.widgets;
 
     if (_selectedGroup != null) {
       widgets = widgets.where((w) => w.group == _selectedGroup).toList();

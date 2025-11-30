@@ -76,35 +76,49 @@ class _WidgetPreviewState extends State<WidgetPreview>
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Determine if we're on mobile (< 768px)
-        final isMobile = constraints.maxWidth < 768;
-        final aspectRatio = isMobile ? 1.0 : 16 / 9;
-
-        return Column(
+    return Material(
+      type: MaterialType.transparency,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        height: 400,
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Tab bar
             Container(
               decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
                 border: Border(
                   bottom: BorderSide(color: Theme.of(context).dividerColor),
                 ),
               ),
-              child: TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Preview'),
-                  Tab(text: 'Code'),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      dividerColor: Colors.transparent,
+                      tabs: const [
+                        Tab(text: 'Preview'),
+                        Tab(text: 'Code'),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-            // Tab content with responsive aspect ratio
-            AspectRatio(
-              aspectRatio: aspectRatio,
+            // Tab content
+            Expanded(
               child: TabBarView(
                 controller: _tabController,
+                physics:
+                    const NeverScrollableScrollPhysics(), // Disable swipe gestures
                 children: [
                   // Preview tab
                   _buildPreviewTab(),
@@ -114,14 +128,14 @@ class _WidgetPreviewState extends State<WidgetPreview>
               ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
   Widget _buildPreviewTab() {
     return Container(
-      color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
       child: Center(
         child:
             widget.previewWidget ??

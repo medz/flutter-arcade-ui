@@ -1,73 +1,49 @@
+import 'dart:convert';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../models/widget_metadata.dart';
 
 /// Service for loading and managing widget metadata and source code.
 class WidgetLoader {
   /// Registry of all available widgets in the library
-  static final List<WidgetMetadata> _widgets = [
-    WidgetMetadata(
-      name: 'FlickeringGrid',
-      group: 'backgrounds',
-      description:
-          'A mesmerizing animated grid background with randomly flickering cells.',
-      sourcePath: 'lib/widgets/backgrounds/flickering_grid.dart',
-      demoPath: 'lib/widgets/backgrounds/flickering_grid_demo.dart',
-      docPath: 'widgets/backgrounds/flickering-grid.md',
-      tags: ['background', 'animation', 'grid'],
-    ),
-    WidgetMetadata(
-      name: 'BlackHoleBackground',
-      group: 'backgrounds',
-      description:
-          'A stunning black hole tunnel effect with animated discs and particles.',
-      sourcePath: 'lib/widgets/backgrounds/black_hole_background.dart',
-      demoPath: 'lib/widgets/backgrounds/black_hole_background_demo.dart',
-      docPath: 'widgets/backgrounds/black-hole-background.md',
-      tags: ['background', 'animation', '3d'],
-    ),
-    WidgetMetadata(
-      name: 'Dock',
-      group: 'navigations',
-      description: 'A macOS-style dock with magnifying icon effect on hover.',
-      sourcePath: 'lib/widgets/navigations/dock.dart',
-      demoPath: 'lib/widgets/navigations/dock_demo.dart',
-      docPath: 'widgets/navigations/dock.md',
-      tags: ['navigation', 'dock', 'animation'],
-    ),
-    WidgetMetadata(
-      name: 'FloatingDock',
-      group: 'navigations',
-      description:
-          'A floating dock with magnification effect and hover tooltips.',
-      sourcePath: 'lib/widgets/navigations/floating_dock.dart',
-      demoPath: 'lib/widgets/navigations/floating_dock_demo.dart',
-      docPath: 'widgets/navigations/floating-dock.md',
-      tags: ['navigation', 'dock', 'tooltip'],
-    ),
-    WidgetMetadata(
-      name: 'GlidingGlowBox',
-      group: 'borders',
-      description:
-          'A container with animated glowing spots that glide along the edges.',
-      sourcePath: 'lib/widgets/borders/gliding_glow_box.dart',
-      demoPath: 'lib/widgets/borders/gliding_glow_box_demo.dart',
-      docPath: 'widgets/borders/gliding-glow-box.md',
-      tags: ['border', 'animation', 'glow'],
-    ),
-    WidgetMetadata(
-      name: 'ThreeDCard',
-      group: 'cards',
-      description:
-          'An interactive card with 3D tilt effect that follows pointer movement.',
-      sourcePath: 'lib/widgets/cards/three_d_card.dart',
-      demoPath: 'lib/widgets/cards/three_d_card_demo.dart',
-      docPath: 'widgets/cards/three-d-card.md',
-      tags: ['card', '3d', 'interactive'],
-    ),
-  ];
+  /// Registry of all available widgets in the library
+  static List<WidgetMetadata> _widgets = [];
+
+  /// Initialize the loader by loading metadata from assets
+  static Future<void> initialize() async {
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      final jsonPaths = manifest
+          .listAssets()
+          .where(
+            (String key) =>
+                key.contains('docs/widgets/') && key.endsWith('.json'),
+          )
+          .toList();
+
+      final loadedWidgets = <WidgetMetadata>[];
+
+      for (final path in jsonPaths) {
+        try {
+          final jsonContent = await rootBundle.loadString(path);
+          final jsonMap = json.decode(jsonContent);
+          loadedWidgets.add(WidgetMetadata.fromJson(jsonMap));
+        } catch (e) {
+          debugPrint('Error loading widget metadata from $path: $e');
+        }
+      }
+
+      // Sort widgets by name
+      loadedWidgets.sort((a, b) => a.name.compareTo(b.name));
+      _widgets = loadedWidgets;
+    } catch (e) {
+      debugPrint('Error initializing WidgetLoader: $e');
+    }
+  }
 
   /// Get all widgets
-  static List<WidgetMetadata> get allWidgets => List.unmodifiable(_widgets);
+  static List<WidgetMetadata> get widgets => List.unmodifiable(_widgets);
 
   /// Get widgets by group/category
   static List<WidgetMetadata> getWidgetsByGroup(String group) {

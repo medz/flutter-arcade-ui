@@ -1,0 +1,13 @@
+{
+    "name": "Dock",
+    "group": "navigations",
+    "description": "A macOS-style dock with magnifying icon effect on hover.",
+    "sourcePath": "lib/widgets/navigations/dock.dart",
+    "demoPath": "lib/widgets/navigations/dock_demo.dart",
+    "docPath": "widgets/navigations/dock.md",
+    "tags": [
+        "navigation",
+        "dock",
+        "animation"
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "name": "GlidingGlowBox",
+    "group": "borders",
+    "description": "A container with animated glowing spots that glide along the edges.",
+    "sourcePath": "lib/widgets/borders/gliding_glow_box.dart",
+    "demoPath": "lib/widgets/borders/gliding_glow_box_demo.dart",
+    "docPath": "widgets/borders/gliding-glow-box.md",
+    "tags": [
+        "border",
+        "animation",
+        "glow"
+    ]
+}

@@ -44,21 +44,29 @@ class HomePage extends StatelessWidget {
               FloatingDock(
                 items: [
                   FloatingDockItem(
-                    icon: Icon(Icons.widgets, color: Colors.grey[700]),
-                    title: 'Browse Widgets',
+                    icon: Icon(Icons.rocket_launch, color: Colors.grey[700]),
+                    title: 'Get Started',
                     onTap: () {
-                      context.go('/docs/widgets');
+                      context.go('/get-started');
                     },
                   ),
                   FloatingDockItem(
-                    icon: Icon(Icons.auto_awesome, color: Colors.grey[700]),
-                    title: 'Effects',
-                    onTap: () {}, // Pure display
+                    icon: Icon(Icons.widgets, color: Colors.grey[700]),
+                    title: 'Widgets',
+                    onTap: () {
+                      context.go('/widgets');
+                    },
                   ),
                   FloatingDockItem(
-                    icon: Icon(Icons.color_lens, color: Colors.grey[700]),
-                    title: 'Themes',
-                    onTap: () {}, // Pure display
+                    icon: Icon(Icons.search, color: Colors.grey[700]),
+                    title: 'Search',
+                    onTap: () {
+                      context.go('/widgets');
+                      // Open search after navigation
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        // This will be handled by DocsShell
+                      });
+                    },
                   ),
                   FloatingDockItem(
                     icon: Icon(Icons.code, color: Colors.grey[700]),

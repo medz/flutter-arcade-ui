@@ -1,0 +1,13 @@
+{
+    "name": "FloatingDock",
+    "group": "navigations",
+    "description": "A floating dock with magnification effect and hover tooltips.",
+    "sourcePath": "lib/widgets/navigations/floating_dock.dart",
+    "demoPath": "lib/widgets/navigations/floating_dock_demo.dart",
+    "docPath": "widgets/navigations/floating-dock.md",
+    "tags": [
+        "navigation",
+        "dock",
+        "tooltip"
+    ]
+}

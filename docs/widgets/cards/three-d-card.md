@@ -1,6 +1,4 @@
-# ThreeDCard
-
-An interactive card with 3D tilt effect that follows mouse/pointer movement, creating depth and visual interest.
+, creating depth and visual interest.
 
 ## Preview
 
@@ -67,6 +65,4 @@ class ProductCard extends StatelessWidget {
 
 @{WidgetCode:cards/three_d_card}
 
-## Related Widgets
 
-- [GlidingGlowBox](/docs/borders/gliding-glow-box)

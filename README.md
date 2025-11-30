@@ -16,31 +16,6 @@ No dependency or few dependencies. No version conflicts. Just beautiful code tha
 4. Copy the code into your Flutter project
 5. Customize it to fit your needs
 
-## Widgets
-
-### Backgrounds
-
-| Widget | Description |
-|-----------|-------------|
-| **FlickeringGrid** | A mesmerizing animated grid background with flickering cells |
-| **BlackHoleBackground** | A black hole tunnel effect with animated discs, radial lines, and particles |
-
-### Navigations
-
-| Widget | Description |
-|-----------|-------------|
-| **Dock** | A macOS-style dock with magnifying icons on hover |
-| **DockIcon** | An icon item for use within a Dock |
-| **DockSeparator** | A visual separator between Dock icon groups |
-| **FloatingDock** | A floating dock with magnifying effect and hover tooltips |
-| **FloatingDockItem** | A data class for FloatingDock items |
-
-### Borders
-
-| Widget | Description |
-|-----------|-------------|
-| **GlidingGlowBox** | A container with gliding glow spots that move along the top and bottom edges |
-
 ## Contributing
 
 We welcome contributions! If you have ideas for new widgets or improvements to existing ones, feel free to open an issue or submit a pull request.

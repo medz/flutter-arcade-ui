@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../components/markdown_renderer.dart';
 import '../../services/docs_loader.dart';
 
@@ -10,12 +9,6 @@ class GettingStartedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Getting Started',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
-      ),
       body: FutureBuilder<String>(
         future: DocsLoader.loadMarkdown('getting-started'),
         builder: (context, snapshot) {
@@ -29,10 +22,13 @@ class GettingStartedPage extends StatelessWidget {
             );
           }
 
-          return MarkdownRenderer(
-            markdown:
-                snapshot.data ??
-                '# Getting Started\n\nDocumentation is being loaded...',
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: MarkdownRenderer(
+              markdown:
+                  snapshot.data ??
+                  '# Getting Started\n\nDocumentation is being loaded...',
+            ),
           );
         },
       ),

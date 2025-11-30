@@ -1,6 +1,3 @@
-# FloatingDock
-
-A floating dock with magnification effect and hover tooltips. Features smooth animations and a frosted glass aesthetic.
 
 ## Preview
 
@@ -77,6 +74,4 @@ Data class for dock items.
 
 @{WidgetCode:navigations/floating_dock}
 
-## Related Widgets
 
-- [Dock](/docs/navigations/dock)

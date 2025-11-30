@@ -1,6 +1,4 @@
-# BlackHoleBackground
-
-A stunning black hole tunnel effect with animated discs, radial lines, and floating particles. Creates a mesmerizing 3D depth illusion perfect for immersive backgrounds.
+lines, and floating particles. Creates a mesmerizing 3D depth illusion perfect for immersive backgrounds.
 
 ## Preview
 
@@ -68,7 +66,5 @@ class MyPage extends StatelessWidget {
 
 @{WidgetCode:backgrounds/black_hole_background}
 
-## Related Widgets
 
-- [FlickeringGrid](/docs/backgrounds/flickering-grid)
 - [Dock](/docs/navigations/dock)

@@ -1,7 +1,3 @@
-# GlidingGlowBox
-
-A container with animated glowing spots that smoothly glide along the top and bottom edges, creating an elegant border effect.
-
 ## Preview
 
 @{WidgetPreview:borders/gliding_glow_box}
