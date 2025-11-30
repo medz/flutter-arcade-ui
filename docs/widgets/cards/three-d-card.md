@@ -1,5 +1,3 @@
-, creating depth and visual interest.
-
 ## Preview
 
 @{WidgetPreview:cards/three_d_card}
@@ -64,5 +62,3 @@ class ProductCard extends StatelessWidget {
 ## Source Code
 
 @{WidgetCode:cards/three_d_card}
-
-

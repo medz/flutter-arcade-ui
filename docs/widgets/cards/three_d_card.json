@@ -1,13 +1,9 @@
 {
-    "name": "ThreeDCard",
-    "group": "cards",
-    "description": "An interactive card with 3D tilt effect that follows pointer movement.",
-    "sourcePath": "lib/widgets/cards/three_d_card.dart",
-    "demoPath": "lib/widgets/cards/three_d_card_demo.dart",
-    "docPath": "widgets/cards/three-d-card.md",
-    "tags": [
-        "card",
-        "3d",
-        "interactive"
-    ]
+  "name": "3D Card",
+  "group": "cards",
+  "description": "An interactive card with 3D tilt effect that follows pointer movement.",
+  "sourcePath": "lib/widgets/cards/three_d_card.dart",
+  "demoPath": "lib/widgets/cards/three_d_card_demo.dart",
+  "docPath": "widgets/cards/three-d-card.md",
+  "tags": ["card", "3d", "interactive"]
 }
