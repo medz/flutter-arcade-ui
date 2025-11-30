@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide StarBorder;
 import 'package:flutter/services.dart';
 
 import 'widgets/backgrounds/black_hole_background.dart';
@@ -6,6 +6,7 @@ import 'widgets/backgrounds/flickering_grid.dart';
 import 'widgets/navigations/dock.dart';
 import 'widgets/navigations/floating_dock.dart';
 import 'widgets/borders/gliding_glow_box.dart';
+import 'widgets/cards/three_d_card_demo.dart';
 
 void main() {
   runApp(const App());
@@ -28,7 +29,7 @@ class App extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.light,
       title: 'Flutter Arcade UI',
       home: const Home(),
     );
@@ -112,6 +113,14 @@ class _HomeState extends State<Home> {
             ),
             child: const Text('GlidingGlowBox'),
           ),
+          SimpleDialogOption(
+            onPressed: () => _copyWidgetCode(
+              context,
+              'ThreeDCard',
+              'lib/widgets/cards/three_d_card.dart',
+            ),
+            child: const Text('ThreeDCard'),
+          ),
         ],
       ),
     );
@@ -123,10 +132,11 @@ class _HomeState extends State<Home> {
       body: PageView(
         controller: _pageController,
         scrollDirection: Axis.vertical,
-        children: const [
+        children: [
           _FlickeringGridPage(),
           _BlackHolePage(),
           _GlidingGlowBoxPage(),
+          ThreeDCardDemo(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
