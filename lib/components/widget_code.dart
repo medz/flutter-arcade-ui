@@ -10,6 +10,9 @@ class WidgetCode extends StatelessWidget {
   /// Optional title for the code block
   final String? title;
 
+  /// Whether to show the header with title and copy button
+  final bool showHeader;
+
   /// Whether to show line numbers
   final bool showLineNumbers;
 
@@ -17,10 +20,12 @@ class WidgetCode extends StatelessWidget {
     super.key,
     required this.code,
     this.title,
+    this.showHeader = true,
     this.showLineNumbers = false,
   });
 
-  Future<void> _copyToClipboard(BuildContext context) async {
+  /// Static method to copy code to clipboard with feedback
+  static Future<void> copyToClipboard(BuildContext context, String code) async {
     await Clipboard.setData(ClipboardData(text: code));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -39,62 +44,67 @@ class WidgetCode extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-          width: 1,
-        ),
+        borderRadius: showHeader ? BorderRadius.circular(12) : null,
+        border: showHeader
+            ? Border.all(
+                color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                width: 1,
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header with title and copy button
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF252525) : const Color(0xFFEEEEEE),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(11),
-                topRight: Radius.circular(11),
-              ),
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                  width: 1,
+          // Header with title and copy button (optional)
+          if (showHeader)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF252525)
+                    : const Color(0xFFEEEEEE),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(11),
+                  topRight: Radius.circular(11),
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                    width: 1,
+                  ),
                 ),
               ),
-            ),
-            child: Row(
-              children: [
-                if (title != null) ...[
-                  Expanded(
-                    child: Text(
-                      title!,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+              child: Row(
+                children: [
+                  if (title != null) ...[
+                    Expanded(
+                      child: Text(
+                        title!,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
+                  ],
+                  if (title == null) const Spacer(),
+                  IconButton(
+                    icon: Icon(
+                      Icons.copy_rounded,
+                      size: 18,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    onPressed: () => copyToClipboard(context, code),
+                    tooltip: 'Copy code',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    splashRadius: 16,
                   ),
                 ],
-                if (title == null) const Spacer(),
-                IconButton(
-                  icon: Icon(
-                    Icons.copy_rounded,
-                    size: 18,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                  onPressed: () => _copyToClipboard(context),
-                  tooltip: 'Copy code',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  splashRadius: 16,
-                ),
-              ],
+              ),
             ),
-          ),
           // Code content
           Expanded(
             child: SingleChildScrollView(
