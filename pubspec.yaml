@@ -16,7 +16,6 @@ dependencies:
     sdk: flutter
   go_router: ^17.0.0
   flutter_markdown_plus: ^1.0.5
-  flutter_highlight: ^0.7.0
   google_fonts: ^6.3.2
   url_launcher: ^6.3.2
 
