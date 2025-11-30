@@ -12,6 +12,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  go_router: ^17.0.0
+  flutter_markdown_plus: ^1.0.5
+  flutter_highlight: ^0.7.0
+  google_fonts: ^6.3.2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_lints: ^6.0.0
@@ -21,3 +26,10 @@ flutter:
   assets:
     - lib/widgets/backgrounds/
     - lib/widgets/navigations/
+    - lib/widgets/borders/
+    - lib/widgets/cards/
+    - docs/
+    - docs/widgets/backgrounds/
+    - docs/widgets/navigations/
+    - docs/widgets/borders/
+    - docs/widgets/cards/

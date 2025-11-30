@@ -1,14 +1,15 @@
-import 'package:flutter/material.dart' hide StarBorder;
-import 'package:flutter/services.dart';
-
-import 'widgets/backgrounds/black_hole_background.dart';
-import 'widgets/backgrounds/flickering_grid.dart';
-import 'widgets/navigations/dock.dart';
-import 'widgets/navigations/floating_dock.dart';
-import 'widgets/borders/gliding_glow_box.dart';
-import 'widgets/cards/three_d_card_demo.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:go_router/go_router.dart';
+import 'pages/home_page.dart';
+import 'pages/docs/docs_index_page.dart';
+import 'pages/docs/getting_started_page.dart';
+import 'pages/docs/widgets_list_page.dart';
+import 'pages/docs/widget_detail_page.dart';
 
 void main() {
+  // Configure URL strategy for Flutter Web to use path-based URLs
+  usePathUrlStrategy();
   runApp(const App());
 }
 
@@ -17,7 +18,8 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
+      title: 'Arcade UI',
       theme: ThemeData.from(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -30,253 +32,31 @@ class App extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.light,
-      title: 'Flutter Arcade UI',
-      home: const Home(),
+      routerConfig: _router,
     );
   }
 }
 
-class Home extends StatefulWidget {
-  const Home({super.key});
-
-  @override
-  State<Home> createState() => _HomeState();
-}
-
-class _HomeState extends State<Home> {
-  final _pageController = PageController();
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _copyWidgetCode(
-    BuildContext context,
-    String name,
-    String path,
-  ) async {
-    final code = await DefaultAssetBundle.of(context).loadString(path);
-    await Clipboard.setData(ClipboardData(text: code));
-    if (context.mounted) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$name code copied to clipboard!')),
-      );
-    }
-  }
-
-  void _showCopyDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Select Widget to Copy'),
-        children: [
-          SimpleDialogOption(
-            onPressed: () => _copyWidgetCode(
-              context,
-              'FlickeringGrid',
-              'lib/widgets/backgrounds/flickering_grid.dart',
-            ),
-            child: const Text('FlickeringGrid'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => _copyWidgetCode(
-              context,
-              'BlackHoleBackground',
-              'lib/widgets/backgrounds/black_hole_background.dart',
-            ),
-            child: const Text('BlackHoleBackground'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => _copyWidgetCode(
-              context,
-              'Dock',
-              'lib/widgets/navigations/dock.dart',
-            ),
-            child: const Text('Dock'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => _copyWidgetCode(
-              context,
-              'FloatingDock',
-              'lib/widgets/navigations/floating_dock.dart',
-            ),
-            child: const Text('FloatingDock'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => _copyWidgetCode(
-              context,
-              'GlidingGlowBox',
-              'lib/widgets/borders/gliding_glow_box.dart',
-            ),
-            child: const Text('GlidingGlowBox'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => _copyWidgetCode(
-              context,
-              'ThreeDCard',
-              'lib/widgets/cards/three_d_card.dart',
-            ),
-            child: const Text('ThreeDCard'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        children: [
-          _FlickeringGridPage(),
-          _BlackHolePage(),
-          _GlidingGlowBoxPage(),
-          ThreeDCardDemo(),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Copy Code',
-        onPressed: () => _showCopyDialog(context),
-        child: const Icon(Icons.copy),
-      ),
-    );
-  }
-}
-
-class _FlickeringGridPage extends StatelessWidget {
-  const _FlickeringGridPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return FlickeringGrid(
-      color: Colors.green,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Arcade UI',
-              style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Create stunning UI with beautifully.',
-              style: TextStyle(fontSize: 18, color: Colors.grey[400]),
-            ),
-            const SizedBox(height: 60),
-            FloatingDock(
-              items: [
-                FloatingDockItem(
-                  icon: Icon(Icons.home, color: Colors.grey[700]),
-                  title: 'Home',
-                  onTap: () {},
-                ),
-                FloatingDockItem(
-                  icon: Icon(Icons.terminal, color: Colors.grey[700]),
-                  title: 'Terminal',
-                  onTap: () {},
-                ),
-                FloatingDockItem(
-                  icon: Icon(Icons.folder, color: Colors.grey[700]),
-                  title: 'Files',
-                  onTap: () {},
-                ),
-                FloatingDockItem(
-                  icon: Icon(Icons.settings, color: Colors.grey[700]),
-                  title: 'Settings',
-                  onTap: () {},
-                ),
-                FloatingDockItem(
-                  icon: Icon(Icons.code, color: Colors.grey[700]),
-                  title: 'Code',
-                  onTap: () {},
-                ),
-              ],
-            ),
-            const SizedBox(height: 60),
-            Icon(Icons.keyboard_arrow_down, size: 32, color: Colors.grey[600]),
-            Text(
-              'Swipe up to see more',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BlackHolePage extends StatelessWidget {
-  const _BlackHolePage();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlackHoleBackground(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Navigations & Back hole',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 60),
-            Dock(
-              itemScale: 1.5,
-              items: [
-                DockIcon(
-                  child: const Icon(Icons.home, color: Colors.white),
-                  onTap: () {},
-                ),
-                DockIcon(
-                  child: const Icon(Icons.search, color: Colors.white),
-                  onTap: () {},
-                ),
-                DockIcon(
-                  child: const Icon(Icons.mail, color: Colors.white),
-                  onTap: () {},
-                ),
-                const DockSeparator(),
-                DockIcon(
-                  child: const Icon(Icons.notifications, color: Colors.white),
-                  onTap: () {},
-                ),
-                DockIcon(
-                  child: const Icon(Icons.settings, color: Colors.white),
-                  onTap: () {},
-                ),
-                DockIcon(
-                  child: const Icon(Icons.person, color: Colors.white),
-                  onTap: () {},
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GlidingGlowBoxPage extends StatelessWidget {
-  const _GlidingGlowBoxPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: GlidingGlowBox(
-        color: Colors.green,
-        child: OutlinedButton(onPressed: null, child: Text('Gliding Glow Box')),
-      ),
-    );
-  }
-}
+final _router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(path: '/', builder: (context, state) => const HomePage()),
+    GoRoute(path: '/docs', builder: (context, state) => const DocsIndexPage()),
+    GoRoute(
+      path: '/docs/getting-started',
+      builder: (context, state) => const GettingStartedPage(),
+    ),
+    GoRoute(
+      path: '/docs/widgets',
+      builder: (context, state) => const WidgetsListPage(),
+    ),
+    GoRoute(
+      path: '/docs/:group/:name',
+      builder: (context, state) {
+        final group = state.pathParameters['group']!;
+        final name = state.pathParameters['name']!;
+        return WidgetDetailPage(group: group, name: name);
+      },
+    ),
+  ],
+);
