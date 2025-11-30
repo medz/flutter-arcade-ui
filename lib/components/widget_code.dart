@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
-import 'package:flutter_highlight/themes/github.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A component that displays widget source code with syntax highlighting and copy functionality.
 class WidgetCode extends StatelessWidget {
@@ -36,15 +35,14 @@ class WidgetCode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Using githubTheme for both modes as it's the available theme
-    final theme = githubTheme;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF6F8FA),
-        borderRadius: BorderRadius.circular(8),
+        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF30363D) : const Color(0xFFD0D7DE),
+          color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+          width: 1,
         ),
       ),
       child: Column(
@@ -54,34 +52,45 @@ class WidgetCode extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF252525) : const Color(0xFFEEEEEE),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(11),
+                topRight: Radius.circular(11),
+              ),
               border: Border(
                 bottom: BorderSide(
-                  color: isDark
-                      ? const Color(0xFF30363D)
-                      : const Color(0xFFD0D7DE),
+                  color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                  width: 1,
                 ),
               ),
             ),
             child: Row(
               children: [
                 if (title != null) ...[
-                  Text(
-                    title!,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : Colors.black87,
+                  Expanded(
+                    child: Text(
+                      title!,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Spacer(),
                 ],
                 if (title == null) const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.copy, size: 18),
+                  icon: Icon(
+                    Icons.copy_rounded,
+                    size: 18,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
                   onPressed: () => _copyToClipboard(context),
                   tooltip: 'Copy code',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
+                  splashRadius: 16,
                 ),
               ],
             ),
@@ -90,14 +99,12 @@ class WidgetCode extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: HighlightView(
+              child: SelectableText(
                 code,
-                language: 'dart',
-                theme: theme,
-                padding: EdgeInsets.zero,
-                textStyle: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 14,
+                style: GoogleFonts.firaCode(
+                  fontSize: 13,
+                  height: 1.6,
+                  color: isDark ? Colors.grey[300] : Colors.grey[800],
                 ),
               ),
             ),
