@@ -28,7 +28,18 @@ class WidgetLoader {
         try {
           final jsonContent = await rootBundle.loadString(path);
           final jsonMap = json.decode(jsonContent);
-          loadedWidgets.add(WidgetMetadata.fromJson(jsonMap));
+
+          // Extract identifier from file path
+          // e.g., "docs/widgets/backgrounds/black_hole_background.json"
+          // -> "backgrounds/black_hole_background"
+          final parts = path.split('/');
+          final fileName = parts.last.replaceAll('.json', '');
+          final group = parts[parts.length - 2];
+          final identifier = '$group/$fileName';
+
+          loadedWidgets.add(
+            WidgetMetadata.fromJson(jsonMap, identifier: identifier),
+          );
         } catch (e) {
           debugPrint('Error loading widget metadata from $path: $e');
         }

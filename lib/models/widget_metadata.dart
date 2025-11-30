@@ -21,17 +21,24 @@ class WidgetMetadata {
   /// Tags for filtering and searching
   final List<String> tags;
 
+  /// Unique identifier (e.g., "backgrounds/black_hole_background")
+  final String identifier;
+
   const WidgetMetadata({
     required this.name,
     required this.group,
     required this.description,
     required this.sourcePath,
     required this.demoPath,
+    required this.identifier,
     this.docPath,
     this.tags = const [],
   });
 
-  factory WidgetMetadata.fromJson(Map<String, dynamic> json) {
+  factory WidgetMetadata.fromJson(
+    Map<String, dynamic> json, {
+    required String identifier,
+  }) {
     return WidgetMetadata(
       name: json['name'] as String,
       group: json['group'] as String,
@@ -40,23 +47,12 @@ class WidgetMetadata {
       demoPath: json['demoPath'] as String,
       docPath: json['docPath'] as String?,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? const [],
+      identifier: identifier,
     );
   }
 
-  /// Get the identifier used in routes (e.g., "backgrounds/flickering_grid")
-  String get identifier => '$group/${_toSnakeCase(name)}';
-
   /// Get the display category name with proper capitalization
   String get categoryName => capitalize(group);
-
-  static String _toSnakeCase(String input) {
-    return input
-        .replaceAllMapped(
-          RegExp(r'[A-Z]'),
-          (match) => '_${match.group(0)!.toLowerCase()}',
-        )
-        .replaceFirst(RegExp(r'^_'), '');
-  }
 
   static String capitalize(String input) {
     if (input.isEmpty) return input;

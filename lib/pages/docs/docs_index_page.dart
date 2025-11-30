@@ -19,104 +19,108 @@ class DocsIndexPage extends StatelessWidget {
       groups[widget.group]!.add(widget);
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Widgets',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.primary,
+    return Title(
+      title: 'Widget Index - Flutter Arcade UI',
+      color: Theme.of(context).primaryColor,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Widgets',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Widget Index',
-            style: GoogleFonts.outfit(
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-              height: 1.1,
+            const SizedBox(height: 32),
+            Text(
+              'Widget Index',
+              style: GoogleFonts.outfit(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                height: 1.1,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'List of all the widgets provided by Arcade UI.',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.7),
+            const SizedBox(height: 16),
+            Text(
+              'List of all the widgets provided by Arcade UI.',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
             ),
-          ),
-          const SizedBox(height: 48),
-          // All Widgets Section
-          Text(
-            'All widgets',
-            style: GoogleFonts.outfit(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 48),
+            // All Widgets Section
+            Text(
+              'All widgets',
+              style: GoogleFonts.outfit(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-          ...groups.entries.map((entry) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    children: [
-                      Text(
-                        '${entry.key[0].toUpperCase()}${entry.key.substring(1)}',
-                        style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
+            ...groups.entries.map((entry) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Row(
+                      children: [
+                        Text(
+                          '${entry.key[0].toUpperCase()}${entry.key.substring(1)}',
+                          style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '(${entry.value.length})',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                        const SizedBox(width: 8),
+                        Text(
+                          '(${entry.value.length})',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).dividerColor.withValues(alpha: 0.2),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Column(
-                    children: entry.value.asMap().entries.map((widgetEntry) {
-                      final index = widgetEntry.key;
-                      final widget = widgetEntry.value;
-                      final isLast = index == entry.value.length - 1;
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.2),
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: entry.value.asMap().entries.map((widgetEntry) {
+                        final index = widgetEntry.key;
+                        final widget = widgetEntry.value;
+                        final isLast = index == entry.value.length - 1;
 
-                      return _ComponentListItem(
-                        widget: widget,
-                        showDivider: !isLast,
-                      );
-                    }).toList(),
+                        return _ComponentListItem(
+                          widget: widget,
+                          showDivider: !isLast,
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-              ],
-            );
-          }),
-        ],
+                  const SizedBox(height: 32),
+                ],
+              );
+            }),
+          ],
+        ),
       ),
     );
   }

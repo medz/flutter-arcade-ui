@@ -100,144 +100,155 @@ class _WidgetDetailPageState extends State<WidgetDetailPage> {
 
     final isDesktop = MediaQuery.of(context).size.width >= 1200;
 
-    return Scaffold(
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Main Content
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Breadcrumbs
-                  _Breadcrumbs(group: widget.group, name: metadata.name),
-                  const SizedBox(height: 32),
+    // Update page title
+    return Title(
+      title: '${metadata.name} - Flutter Arcade UI',
+      color: Theme.of(context).primaryColor,
+      child: Scaffold(
+        body: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Main Content
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 32,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Breadcrumbs
+                    _Breadcrumbs(group: widget.group, name: metadata.name),
+                    const SizedBox(height: 32),
 
-                  // Title
-                  Text(
-                    metadata.name,
-                    style: GoogleFonts.inter(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      height: 1.1,
+                    // Title
+                    Text(
+                      metadata.name,
+                      style: GoogleFonts.inter(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        height: 1.1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Description
-                  Text(
-                    metadata.description,
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.7),
-                      height: 1.5,
+                    // Description
+                    Text(
+                      metadata.description,
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
+                        height: 1.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 40),
+                    const SizedBox(height: 40),
 
-                  // Documentation Content
-                  if (metadata.docPath != null)
-                    FutureBuilder<String>(
-                      future: DocsLoader.loadMarkdown(metadata.docPath!),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-
-                        if (snapshot.hasError || !snapshot.hasData) {
-                          return const SizedBox.shrink();
-                        }
-
-                        // Extract TOC items when markdown is loaded
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (!mounted) return;
-                          final headings = _extractHeadings(snapshot.data!);
-                          if (_tocItems.length != headings.length ||
-                              !_tocItems.every((e) => headings.contains(e))) {
-                            setState(() {
-                              _tocItems = headings;
-                              _headingKeys.clear();
-                              for (var heading in headings) {
-                                _headingKeys[heading] = GlobalKey();
-                              }
-                            });
+                    // Documentation Content
+                    if (metadata.docPath != null)
+                      FutureBuilder<String>(
+                        future: DocsLoader.loadMarkdown(metadata.docPath!),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
                           }
-                        });
 
-                        return MarkdownRenderer(
-                          markdown: snapshot.data!,
-                          headingKeys: _headingKeys,
-                          previewWidgets: {
-                            identifier:
-                                _getPreviewWidget(identifier) ??
-                                const SizedBox(),
-                          },
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
+                          if (snapshot.hasError || !snapshot.hasData) {
+                            return const SizedBox.shrink();
+                          }
 
-          // Right Sidebar (Table of Contents) - Desktop only
-          if (isDesktop)
-            Container(
-              width: 240,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: Theme.of(
-                      context,
-                    ).dividerColor.withValues(alpha: 0.1),
-                  ),
+                          // Extract TOC items when markdown is loaded
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            final headings = _extractHeadings(snapshot.data!);
+                            if (_tocItems.length != headings.length ||
+                                !_tocItems.every((e) => headings.contains(e))) {
+                              setState(() {
+                                _tocItems = headings;
+                                _headingKeys.clear();
+                                for (var heading in headings) {
+                                  _headingKeys[heading] = GlobalKey();
+                                }
+                              });
+                            }
+                          });
+
+                          return MarkdownRenderer(
+                            markdown: snapshot.data!,
+                            headingKeys: _headingKeys,
+                            previewWidgets: {
+                              identifier:
+                                  _getPreviewWidget(identifier) ??
+                                  const SizedBox(),
+                            },
+                          );
+                        },
+                      ),
+                  ],
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'On This Page',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Dynamically generate TOC links from markdown headings
-                  ..._tocItems.map(
-                    (title) => _TOCLink(
-                      title: title,
-                      onTap: () => _scrollToHeading(title),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  const Divider(height: 1),
-                  const SizedBox(height: 32),
-                  _ExternalLink(
-                    icon: Icons.star_outline,
-                    title: 'Star on GitHub',
-                    url: 'https://github.com/medz/flutter-arcade-ui',
-                  ),
-                  _ExternalLink(
-                    icon: Icons.bug_report_outlined,
-                    title: 'Create Issues',
-                    url: 'https://github.com/medz/flutter-arcade-ui/issues',
-                  ),
-                ],
-              ),
             ),
-        ],
+
+            // Right Sidebar (Table of Contents) - Desktop only
+            if (isDesktop)
+              Container(
+                width: 240,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.1),
+                    ),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'On This Page',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Dynamically generate TOC links from markdown headings
+                    ..._tocItems.map(
+                      (title) => _TOCLink(
+                        title: title,
+                        onTap: () => _scrollToHeading(title),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const Divider(height: 1),
+                    const SizedBox(height: 32),
+                    _ExternalLink(
+                      icon: Icons.star_outline,
+                      title: 'Star on GitHub',
+                      url: 'https://github.com/medz/flutter-arcade-ui',
+                    ),
+                    _ExternalLink(
+                      icon: Icons.bug_report_outlined,
+                      title: 'Create Issues',
+                      url: 'https://github.com/medz/flutter-arcade-ui/issues',
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
