@@ -165,7 +165,7 @@ class _ComponentListItem extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -174,7 +174,7 @@ class _ComponentListItem extends StatelessWidget {
                   size: 16,
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.7),
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ],
             ),

@@ -83,7 +83,7 @@ class _WidgetPreviewState extends State<WidgetPreview>
         side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Container(
+      child: SizedBox(
         height: 400,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -12,6 +12,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
   go_router: ^17.0.0
   flutter_markdown_plus: ^1.0.5
   flutter_highlight: ^0.7.0
