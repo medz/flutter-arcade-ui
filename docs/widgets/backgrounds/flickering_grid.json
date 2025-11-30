@@ -1,0 +1,13 @@
+{
+    "name": "FlickeringGrid",
+    "group": "backgrounds",
+    "description": "A mesmerizing animated grid background with randomly flickering cells.",
+    "sourcePath": "lib/widgets/backgrounds/flickering_grid.dart",
+    "demoPath": "lib/widgets/backgrounds/flickering_grid_demo.dart",
+    "docPath": "widgets/backgrounds/flickering-grid.md",
+    "tags": [
+        "background",
+        "animation",
+        "grid"
+    ]
+}
