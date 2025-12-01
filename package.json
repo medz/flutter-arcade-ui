@@ -3,7 +3,7 @@
   "homepage": "https://arcade.medz.dev",
   "scripts": {
     "types": "wrangler types",
-    "build": "flutter build web",
+    "build": "flutter build web --wasm",
     "deploy": "wrangler deploy",
     "predeploy": "bun run build"
   },
