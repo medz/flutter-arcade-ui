@@ -13,15 +13,11 @@ class WidgetCode extends StatelessWidget {
   /// Whether to show the header with title and copy button
   final bool showHeader;
 
-  /// Whether to show line numbers
-  final bool showLineNumbers;
-
   const WidgetCode({
     super.key,
     required this.code,
     this.title,
     this.showHeader = true,
-    this.showLineNumbers = false,
   });
 
   /// Static method to copy code to clipboard with feedback

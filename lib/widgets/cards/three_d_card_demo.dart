@@ -7,19 +7,18 @@ class ThreeDCardDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use a fixed dark theme for this specific demo to match the aesthetic
-    const surfaceColor = Color(0xFF1C1C1E);
-    const primaryColor = Color(0xFF0A84FF);
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final primaryColor = Theme.of(context).primaryColor;
 
     return Center(
       child: ThreeDCard(
         decoration: BoxDecoration(
           color: surfaceColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: primaryColor.withValues(alpha: 0.1)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: primaryColor.withValues(alpha: 0.2),
               blurRadius: 20,
               spreadRadius: 5,
             ),
@@ -49,7 +48,6 @@ class ThreeDCardDemo extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -60,11 +58,7 @@ class ThreeDCardDemo extends StatelessWidget {
                 translateZ: 50,
                 child: Text(
                   'Welcome to the era of spatial computing.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.7),
-                    height: 1.5,
-                  ),
+                  style: TextStyle(fontSize: 14, height: 1.5),
                 ),
               ),
               const SizedBox(height: 16),
@@ -103,27 +97,24 @@ class ThreeDCardDemo extends StatelessWidget {
                     child: TextButton(
                       onPressed: () {},
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                       ),
-                      child: const Text('Learn more >'),
+                      child: const Text('Learn more →'),
                     ),
                   ),
                   ThreeDCardItem(
                     translateZ: 40,
-                    child: ElevatedButton(
+                    child: FilledButton.icon(
                       onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
+                      style: FilledButton.styleFrom(
                         shape: const StadiumBorder(),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
                         ),
-                        elevation: 0,
                       ),
-                      child: const Text(
+                      icon: const Icon(Icons.shopping_cart),
+                      label: const Text(
                         'Buy',
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),

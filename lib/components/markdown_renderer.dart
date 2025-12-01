@@ -64,7 +64,7 @@ class MarkdownRenderer extends StatelessWidget {
                     height: 400,
                     child: WidgetCode(
                       code: snapshot.data ?? '// Error loading code',
-                      title: segment.identifier,
+                      title: '${segment.identifier}.dart',
                     ),
                   );
                 },
@@ -143,8 +143,6 @@ class MarkdownRenderer extends StatelessWidget {
     BuildContext context, {
     GlobalKey? headingKey,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final markdownBody = MarkdownBody(
       data: content,
       selectable: true,
@@ -162,14 +160,6 @@ class MarkdownRenderer extends StatelessWidget {
         h2Padding: const EdgeInsets.only(top: 32, bottom: 8),
         h3: Theme.of(context).textTheme.titleLarge,
         h3Padding: const EdgeInsets.only(top: 24, bottom: 8),
-        // Inline code styling
-        code: GoogleFonts.firaCode(
-          fontSize: 13,
-          color: isDark ? Colors.pink[300] : Colors.pink[700],
-          backgroundColor: isDark
-              ? const Color(0xFF2D2D2D)
-              : const Color(0xFFEEEEEE),
-        ),
       ),
     );
 
