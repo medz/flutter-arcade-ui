@@ -39,7 +39,7 @@ class App extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.system,
       routerConfig: _router,
     );
   }
