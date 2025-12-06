@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 class GlidingGlowBox extends StatefulWidget {
@@ -5,6 +6,8 @@ class GlidingGlowBox extends StatefulWidget {
   final Color color;
   final Duration speed;
   final double borderWidth;
+  final double? borderRadius;
+  final double glowPadding;
 
   const GlidingGlowBox({
     super.key,
@@ -12,6 +15,8 @@ class GlidingGlowBox extends StatefulWidget {
     this.color = const Color(0xFFE0E0E0),
     this.speed = const Duration(seconds: 6),
     this.borderWidth = 3.0,
+    this.borderRadius,
+    this.glowPadding = 0,
   });
 
   @override
@@ -37,6 +42,8 @@ class _GlidingGlowBoxState extends State<GlidingGlowBox>
 
   @override
   Widget build(BuildContext context) {
+    final inset = widget.borderWidth / 2 + widget.glowPadding;
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -45,11 +52,9 @@ class _GlidingGlowBoxState extends State<GlidingGlowBox>
             progress: _controller.value,
             color: widget.color,
             borderWidth: widget.borderWidth,
+            borderRadius: widget.borderRadius,
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: widget.borderWidth),
-            child: child,
-          ),
+          child: Padding(padding: EdgeInsets.all(inset), child: child),
         );
       },
       child: widget.child,
@@ -61,85 +66,49 @@ class _GlidingGlowBoxPainter extends CustomPainter {
   final double progress;
   final Color color;
   final double borderWidth;
+  final double? borderRadius;
 
   _GlidingGlowBoxPainter({
     required this.progress,
     required this.color,
     required this.borderWidth,
+    required this.borderRadius,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final borderRadius = size.height / 2;
+    final radiusValue = borderRadius ?? size.height / 2;
+    final radius = Radius.circular(radiusValue);
+    final rrect = RRect.fromRectAndRadius(rect, radius);
 
-    // Child rect (inside the padding)
-    final childRect = Rect.fromLTRB(
-      borderWidth,
-      borderWidth,
-      size.width - borderWidth,
-      size.height - borderWidth,
-    );
-    final childBorderRadius = (size.height - borderWidth * 2) / 2;
-
-    // Clip to area outside child
-    final outerRRect = RRect.fromRectAndRadius(
-      rect,
-      Radius.circular(borderRadius),
-    );
-    final innerRRect = RRect.fromRectAndRadius(
-      childRect,
-      Radius.circular(childBorderRadius),
+    final sweep = SweepGradient(
+      startAngle: 0,
+      endAngle: math.pi * 2,
+      colors: [
+        color.withOpacity(0.0),
+        color.withOpacity(0.0),
+        color.withOpacity(0.6),
+        color,
+        color.withOpacity(0.6),
+        color.withOpacity(0.0),
+      ],
+      stops: const [0.0, 0.32, 0.42, 0.5, 0.58, 0.74],
+      transform: GradientRotation(math.pi * 2 * progress),
     );
 
-    final clipPath = Path()
-      ..addRRect(outerRRect)
-      ..addRRect(innerRRect)
-      ..fillType = PathFillType.evenOdd;
+    final glowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = borderWidth
+      ..shader = sweep.createShader(rect)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawRRect(rrect, glowPaint);
 
-    canvas.save();
-    canvas.clipPath(clipPath);
-
-    // Glow dimensions
-    final glowWidth = size.width * 0.6;
-    final glowHeight = size.height * 0.5;
-
-    // Movement range (independent of glow size)
-    final moveRange = size.width;
-
-    // Top glow - moves from left to right
-    final topX = -glowWidth / 2 + progress * (moveRange + glowWidth);
-    final topY = glowHeight / 2;
-    _drawGlow(canvas, Offset(topX, topY), glowWidth, glowHeight);
-
-    // Bottom glow - moves from right to left
-    final bottomX =
-        size.width + glowWidth / 2 - progress * (moveRange + glowWidth);
-    final bottomY = size.height - glowHeight / 2;
-    _drawGlow(canvas, Offset(bottomX, bottomY), glowWidth, glowHeight);
-
-    canvas.restore();
-  }
-
-  void _drawGlow(Canvas canvas, Offset center, double width, double height) {
-    // Use scale transform to properly render ellipse with RadialGradient
-    final scaleX = width / height;
-
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.scale(scaleX, 1.0);
-
-    final radius = height / 2;
-    final circleRect = Rect.fromCircle(center: Offset.zero, radius: radius);
-
-    final paint = Paint()
-      ..shader = RadialGradient(
-        colors: [color.withValues(alpha: 0.8), color.withValues(alpha: 0)],
-        stops: const [0.0, 1.0],
-      ).createShader(circleRect);
-
-    canvas.drawCircle(Offset.zero, radius, paint);
-    canvas.restore();
+    final highlightPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = borderWidth * 0.5
+      ..shader = sweep.createShader(rect);
+    canvas.drawRRect(rrect.inflate(-borderWidth * 0.25), highlightPaint);
   }
 
   @override

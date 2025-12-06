@@ -1,4 +1,4 @@
-A smooth gliding glow effect that creates animated light spots moving along the top and bottom edges of a container. Perfect for highlighting buttons, cards, or any interactive elements.
+A smooth gliding glow ring that orbits the container edges. Perfect for highlighting buttons, cards, or any interactive elements.
 
 ## Preview
 
@@ -6,7 +6,7 @@ A smooth gliding glow effect that creates animated light spots moving along the 
 
 ## Features
 
-- Smooth bidirectional gliding animation on top and bottom edges
+- Smooth orbiting glow that wraps around the container
 - Customizable glow color and intensity
 - Adjustable animation speed
 - Configurable border width
@@ -20,7 +20,9 @@ A smooth gliding glow effect that creates animated light spots moving along the 
 | `child` | `Widget` | *required* | The child widget to wrap with the glow effect |
 | `color` | `Color` | `Color(0xFFE0E0E0)` | Color of the glowing spots |
 | `speed` | `Duration` | `6 seconds` | Duration of one complete animation cycle |
-| `borderWidth` | `double` | `3.0` | Width of the glow border area |
+| `borderWidth` | `double` | `3.0` | Width of the glow ring |
+| `borderRadius` | `double?` | `null` (pill by height) | Corner radius for the glow shape |
+| `glowPadding` | `double` | `0` | Extra gap between the glow ring and the child |
 
 ## Usage
 
@@ -29,6 +31,8 @@ import 'widgets/borders/gliding_glow_box.dart';
 
 GlidingGlowBox(
   color: Colors.purple,
+  borderRadius: 12,
+  glowPadding: 6,
   child: ElevatedButton(
     onPressed: () {},
     child: Text('Click Me'),
@@ -44,6 +48,8 @@ GlidingGlowBox(
 GlidingGlowBox(
   color: Colors.purple,
   speed: Duration(seconds: 3),
+  borderRadius: 10,
+  glowPadding: 4,
   child: Container(
     padding: EdgeInsets.all(16),
     child: Text('Premium Feature'),
@@ -58,6 +64,8 @@ GlidingGlowBox(
   color: Colors.blue.withOpacity(0.6),
   speed: Duration(seconds: 10),
   borderWidth: 2.0,
+  borderRadius: 14,
+  glowPadding: 2,
   child: Card(
     child: ListTile(title: Text('Highlighted Item')),
   ),
@@ -70,6 +78,8 @@ GlidingGlowBox(
 GlidingGlowBox(
   color: Colors.amber,
   borderWidth: 5.0,
+  borderRadius: 18,
+  glowPadding: 8,
   child: Padding(
     padding: EdgeInsets.all(20),
     child: Text('Call to Action'),

@@ -12,11 +12,14 @@ class GlidingGlowBoxDemo extends StatelessWidget {
       child: Center(
         child: GlidingGlowBox(
           color: Colors.cyan,
+          borderWidth: 4,
+          borderRadius: 16,
+          glowPadding: 0,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
             decoration: BoxDecoration(
               color: Colors.grey[800],
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: const Text(
               'Gliding Glow Box',
