@@ -8,6 +8,7 @@ import '../../widgets/backgrounds/flickering_grid_demo.dart';
 import '../../widgets/backgrounds/black_hole_background_demo.dart';
 import '../../widgets/navigations/dock_demo.dart';
 import '../../widgets/navigations/floating_dock_demo.dart';
+import '../../widgets/navigations/motion_tabs_demo.dart';
 import '../../widgets/borders/gliding_glow_box_demo.dart';
 import '../../widgets/cards/three_d_card_demo.dart';
 
@@ -263,6 +264,8 @@ class _WidgetDetailPageState extends State<WidgetDetailPage> {
         return const DockDemo();
       case 'navigations/floating_dock':
         return const FloatingDockDemo();
+      case 'navigations/motion_tabs':
+        return const MotionTabsDemo();
       case 'borders/gliding_glow_box':
         return const GlidingGlowBoxDemo();
       case 'cards/three_d_card':

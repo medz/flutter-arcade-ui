@@ -1,0 +1,14 @@
+{
+    "name": "MotionTabs",
+    "group": "navigations",
+    "description": "A pill-style tab set with a translucent overlay that stretches across all tabs and collapses to the hovered item.",
+    "sourcePath": "lib/widgets/navigations/motion_tabs.dart",
+    "demoPath": "lib/widgets/navigations/motion_tabs_demo.dart",
+    "docPath": "widgets/navigations/motion-tabs.md",
+    "tags": [
+        "tabs",
+        "navigation",
+        "hover",
+        "animation"
+    ]
+}
