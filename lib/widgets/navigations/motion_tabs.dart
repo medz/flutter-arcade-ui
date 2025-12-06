@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class MotionTabs extends StatefulWidget {
   final List<MotionTabItem> items;
@@ -26,8 +26,8 @@ class MotionTabs extends StatefulWidget {
     this.onChanged,
     this.backgroundColor = const Color(0xFF2F4BFF),
     this.overlayColor = const Color(0x24FFFFFF),
-    this.selectedColor = Colors.white,
-    this.textColor = Colors.white,
+    this.selectedColor = const Color(0xffffffff),
+    this.textColor = const Color(0xffffffff),
     this.selectedTextColor = const Color(0xFF1C1F3E),
     this.height = 56,
     this.borderRadius = 18,
@@ -280,7 +280,7 @@ class _TabButton extends StatelessWidget {
           width: width,
           height: height,
           decoration: BoxDecoration(
-            color: Colors.transparent,
+            color: const Color(0x00ffffff),
             borderRadius: BorderRadius.circular(effectiveRadius),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12),
