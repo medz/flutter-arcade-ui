@@ -29,8 +29,10 @@ flutter:
     - lib/widgets/navigations/
     - lib/widgets/borders/
     - lib/widgets/cards/
+    - lib/widgets/games/
     - docs/
     - docs/widgets/backgrounds/
     - docs/widgets/navigations/
     - docs/widgets/borders/
     - docs/widgets/cards/
+    - docs/widgets/games/

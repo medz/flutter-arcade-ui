@@ -11,6 +11,7 @@ import '../../widgets/navigations/floating_dock_demo.dart';
 import '../../widgets/navigations/motion_tabs_demo.dart';
 import '../../widgets/borders/gliding_glow_box_demo.dart';
 import '../../widgets/cards/three_d_card_demo.dart';
+import '../../widgets/games/space_shooter_demo.dart';
 
 /// Widget detail page (/docs/:group/:name)
 class WidgetDetailPage extends StatefulWidget {
@@ -270,6 +271,8 @@ class _WidgetDetailPageState extends State<WidgetDetailPage> {
         return const GlidingGlowBoxDemo();
       case 'cards/three_d_card':
         return const ThreeDCardDemo();
+      case 'games/space_shooter':
+        return const SpaceShooterDemo();
       default:
         return null;
     }

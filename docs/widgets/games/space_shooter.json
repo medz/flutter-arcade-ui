@@ -1,0 +1,14 @@
+{
+    "name": "SpaceShooter",
+    "group": "games",
+    "description": "A minimalist space shooter game inspired by 1KB game challenges. Control your ship and destroy enemies!",
+    "sourcePath": "lib/widgets/games/space_shooter.dart",
+    "demoPath": "lib/widgets/games/space_shooter_demo.dart",
+    "docPath": "widgets/games/space-shooter.md",
+    "tags": [
+        "game",
+        "animation",
+        "interactive",
+        "shooter"
+    ]
+}
