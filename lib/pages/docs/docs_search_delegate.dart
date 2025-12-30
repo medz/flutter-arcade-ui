@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:unrouter/unrouter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/widget_loader.dart';
 import '../../models/widget_metadata.dart';
@@ -98,7 +98,11 @@ class DocsSearchDelegate extends SearchDelegate<WidgetMetadata?> {
           ),
           onTap: () {
             close(context, widget);
-            context.go('/widgets/${widget.identifier.replaceAll('_', '-')}');
+            context.navigate(
+              Uri.parse(
+                '/widgets/${widget.identifier.replaceAll('_', '-')}',
+              ),
+            );
           },
         );
       },

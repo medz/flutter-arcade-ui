@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:go_router/go_router.dart';
+import 'package:unrouter/unrouter.dart';
 import '../../services/widget_loader.dart';
 import '../../models/widget_metadata.dart';
 
@@ -122,7 +122,9 @@ class _WidgetCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
-          context.go('/docs/${widget.group}/${_toKebabCase(widget.name)}');
+          context.navigate(
+            Uri.parse('/docs/${widget.group}/${_toKebabCase(widget.name)}'),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(20),

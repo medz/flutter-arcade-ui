@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:unrouter/unrouter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/widget_loader.dart';
 import '../../models/widget_metadata.dart';
@@ -136,7 +136,9 @@ class _ComponentListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () =>
-          context.go('/widgets/${widget.identifier.replaceAll('_', '-')}'),
+          context.navigate(
+            Uri.parse('/widgets/${widget.identifier.replaceAll('_', '-')}'),
+          ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(

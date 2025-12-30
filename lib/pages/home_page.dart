@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:go_router/go_router.dart';
+import 'package:unrouter/unrouter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/backgrounds/flickering_grid.dart';
 import '../widgets/navigations/floating_dock.dart';
@@ -50,21 +50,21 @@ class HomePage extends StatelessWidget {
                       icon: Icon(Icons.rocket_launch, color: Colors.grey[700]),
                       title: 'Get Started',
                       onTap: () {
-                        context.go('/get-started');
+                        context.navigate(Uri.parse('/get-started'));
                       },
                     ),
                     FloatingDockItem(
                       icon: Icon(Icons.widgets, color: Colors.grey[700]),
                       title: 'Widgets',
                       onTap: () {
-                        context.go('/widgets');
+                        context.navigate(Uri.parse('/widgets'));
                       },
                     ),
                     FloatingDockItem(
                       icon: Icon(Icons.search, color: Colors.grey[700]),
                       title: 'Search',
                       onTap: () {
-                        context.go('/widgets');
+                        context.navigate(Uri.parse('/widgets'));
                         // Open search after navigation
                         Future.delayed(const Duration(milliseconds: 100), () {
                           // This will be handled by DocsShell

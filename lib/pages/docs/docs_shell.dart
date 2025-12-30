@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:unrouter/unrouter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/widget_loader.dart';
@@ -7,9 +7,7 @@ import '../../models/widget_metadata.dart';
 import 'docs_search_delegate.dart';
 
 class DocsShell extends StatelessWidget {
-  final Widget child;
-
-  const DocsShell({super.key, required this.child});
+  const DocsShell({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +73,7 @@ class DocsShell extends StatelessWidget {
               ),
               child: const DocsSidebar(),
             ),
-          Expanded(child: child),
+          const Expanded(child: Outlet()),
         ],
       ),
     );
@@ -87,7 +85,7 @@ class DocsSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentPath = GoRouterState.of(context).uri.path;
+    final currentPath = context.location.uri.path;
 
     return Container(
       width: 280,
@@ -108,21 +106,21 @@ class DocsSidebar extends StatelessWidget {
                     title: 'Home',
                     icon: Icons.home_outlined,
                     isSelected: currentPath == '/',
-                    onTap: () => context.go('/'),
+                    onTap: () => context.navigate(Uri.parse('/')),
                   ),
                   const SizedBox(height: 8),
                   _SidebarLink(
                     title: 'Getting Started',
                     icon: Icons.rocket_launch_outlined,
                     isSelected: currentPath == '/get-started',
-                    onTap: () => context.go('/get-started'),
+                    onTap: () => context.navigate(Uri.parse('/get-started')),
                   ),
                   const SizedBox(height: 8),
                   _SidebarLink(
                     title: 'Widgets',
                     icon: Icons.widgets_outlined,
                     isSelected: currentPath == '/widgets',
-                    onTap: () => context.go('/widgets'),
+                    onTap: () => context.navigate(Uri.parse('/widgets')),
                   ),
                   const SizedBox(height: 16),
                   const Divider(height: 1),
@@ -153,7 +151,8 @@ class DocsSidebar extends StatelessWidget {
                             title: widget.name,
                             isSelected: currentPath == path,
                             isSubItem: true,
-                            onTap: () => context.go(path),
+                            onTap: () =>
+                                context.navigate(Uri.parse(path)),
                           );
                         }),
                         const SizedBox(height: 16),

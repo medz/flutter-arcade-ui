@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
-import 'package:go_router/go_router.dart';
+import 'package:unrouter/unrouter.dart';
+// ignore: implementation_imports
+import 'package:unrouter/src/router/url_strategy.dart';
 import 'pages/home_page.dart';
 import 'pages/docs/docs_index_page.dart';
 import 'pages/docs/getting_started_page.dart';
@@ -12,9 +13,6 @@ import 'services/widget_loader.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Configure URL strategy for Flutter Web to use path-based URLs
-  usePathUrlStrategy();
-
   // Initialize widget loader
   await WidgetLoader.initialize();
 
@@ -45,41 +43,28 @@ class App extends StatelessWidget {
   }
 }
 
-final _router = GoRouter(
-  initialLocation: '/',
-  routes: [
-    GoRoute(path: '/', builder: (context, state) => const HomePage()),
-    ShellRoute(
-      builder: (context, state, child) {
-        return DocsShell(child: child);
-      },
-      routes: [
-        GoRoute(
-          path: '/get-started',
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const GettingStartedPage(),
-          ),
-        ),
-        GoRoute(
-          path: '/widgets',
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const DocsIndexPage(),
-          ),
-        ),
-        GoRoute(
-          path: '/widgets/:group/:name',
-          pageBuilder: (context, state) {
-            final group = state.pathParameters['group']!;
-            final name = state.pathParameters['name']!;
-            return NoTransitionPage(
-              key: state.pageKey,
-              child: WidgetDetailPage(group: group, name: name),
-            );
-          },
-        ),
+final _router = Unrouter(
+  strategy: UrlStrategy.browser,
+  routes: const [
+    Inlet(factory: HomePage.new),
+    Inlet(
+      factory: DocsShell.new,
+      children: [
+        Inlet(path: 'get-started', factory: GettingStartedPage.new),
+        Inlet(path: 'widgets', factory: DocsIndexPage.new),
+        Inlet(path: 'widgets/:group/:name', factory: _WidgetDetailRoute.new),
       ],
     ),
   ],
 );
+
+class _WidgetDetailRoute extends StatelessWidget {
+  const _WidgetDetailRoute({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final group = context.params['group']!;
+    final name = context.params['name']!;
+    return WidgetDetailPage(group: group, name: name);
+  }
+}
