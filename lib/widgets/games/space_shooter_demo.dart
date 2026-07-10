@@ -73,9 +73,6 @@ class _SpaceShooterDemoState extends State<SpaceShooterDemo> {
         children: [
           // Game (full size)
           SpaceShooter(
-            key: ValueKey(
-              '$_selectedPreset-$_initialScore-$_enemySpawnInterval-$_enemySpeed-$_bulletSpeed',
-            ),
             initialScore: _initialScore,
             enemySpawnInterval: _enemySpawnInterval,
             enemySpeed: _enemySpeed,

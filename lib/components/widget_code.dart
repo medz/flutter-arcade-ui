@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// A component that displays widget source code with syntax highlighting and copy functionality.
+import '../theme/arcade_theme.dart';
+
 class WidgetCode extends StatelessWidget {
-  /// The source code to display
   final String code;
-
-  /// Optional title for the code block
   final String? title;
-
-  /// Whether to show the header with title and copy button
   final bool showHeader;
 
   const WidgetCode({
@@ -20,102 +15,82 @@ class WidgetCode extends StatelessWidget {
     this.showHeader = true,
   });
 
-  /// Static method to copy code to clipboard with feedback
-  static Future<void> copyToClipboard(BuildContext context, String code) async {
-    await Clipboard.setData(ClipboardData(text: code));
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Code copied to clipboard!'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
-        borderRadius: showHeader ? BorderRadius.circular(12) : null,
-        border: showHeader
-            ? Border.all(
-                color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                width: 1,
-              )
-            : null,
+        color: const Color(0xFF0B0D12),
+        border: Border.all(color: ArcadeColors.border),
+        borderRadius: BorderRadius.circular(9),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header with title and copy button (optional)
           if (showHeader)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF252525)
-                    : const Color(0xFFEEEEEE),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(11),
-                  topRight: Radius.circular(11),
-                ),
-                border: Border(
-                  bottom: BorderSide(
-                    color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                    width: 1,
-                  ),
-                ),
+              constraints: const BoxConstraints(minHeight: 42),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: const BoxDecoration(
+                color: ArcadeColors.surfaceRaised,
+                border: Border(bottom: BorderSide(color: ArcadeColors.border)),
               ),
               child: Row(
                 children: [
-                  if (title != null) ...[
-                    Expanded(
-                      child: Text(
-                        title!,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                  Expanded(
+                    child: Text(
+                      title ?? 'dart',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: ArcadeColors.muted,
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ],
-                  if (title == null) const Spacer(),
+                  ),
                   IconButton(
-                    icon: Icon(
-                      Icons.copy_rounded,
-                      size: 18,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                    onPressed: () => copyToClipboard(context, code),
                     tooltip: 'Copy code',
+                    onPressed: () => _copy(context),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    splashRadius: 16,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 32,
+                      height: 32,
+                    ),
+                    icon: const Icon(Icons.copy_rounded, size: 16),
                   ),
                 ],
               ),
             ),
-          // Code content
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 420),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: SelectableText(
                 code,
-                style: GoogleFonts.firaCode(
-                  fontSize: 13,
+                style: const TextStyle(
+                  color: Color(0xFFD4D5DC),
+                  fontFamily: 'monospace',
+                  fontSize: 12.5,
                   height: 1.6,
-                  color: isDark ? Colors.grey[300] : Colors.grey[800],
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _copy(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: code));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Code copied'),
+        duration: Duration(seconds: 2),
       ),
     );
   }

@@ -61,7 +61,7 @@ GlidingGlowBox(
 
 ```dart
 GlidingGlowBox(
-  color: Colors.blue.withOpacity(0.6),
+  color: Colors.blue.withValues(alpha: 0.6),
   speed: Duration(seconds: 10),
   borderWidth: 2.0,
   borderRadius: 14,

@@ -15,29 +15,32 @@ class Dock extends StatefulWidget {
   const Dock({
     super.key,
     required this.items,
-    this.itemSize = 48.0,
-    this.maxScale = 2.0,
-    this.itemScale = 1.0,
-    this.distance = 100.0,
+    this.itemSize = 48,
+    this.maxScale = 2,
+    this.itemScale = 1,
+    this.distance = 100,
     this.direction = Axis.horizontal,
-    this.gap = 8.0,
+    this.gap = 8,
     this.padding,
     this.decoration,
     this.itemDecoration,
-  });
+  }) : assert(itemSize > 0, 'itemSize must be greater than 0'),
+       assert(maxScale >= 1, 'maxScale must be at least 1'),
+       assert(itemScale >= 0, 'itemScale must be non-negative'),
+       assert(distance > 0, 'distance must be greater than 0'),
+       assert(gap >= 0, 'gap must be non-negative');
 
   @override
   State<Dock> createState() => _DockState();
 }
 
 class _DockState extends State<Dock> {
-  final _mousePositionNotifier = ValueNotifier<Offset?>(null);
+  final _pointer = ValueNotifier<Offset?>(null);
 
   static const _defaultDecoration = BoxDecoration(
     color: Color(0x80000000),
     borderRadius: BorderRadius.all(Radius.circular(16)),
   );
-
   static const _defaultItemDecoration = BoxDecoration(
     color: Color(0xFF2A2A2A),
     borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -45,7 +48,7 @@ class _DockState extends State<Dock> {
 
   @override
   void dispose() {
-    _mousePositionNotifier.dispose();
+    _pointer.dispose();
     super.dispose();
   }
 
@@ -58,110 +61,74 @@ class _DockState extends State<Dock> {
     );
 
     return MouseRegion(
-      onHover: (event) {
-        final renderBox = context.findRenderObject() as RenderBox?;
-        if (renderBox != null) {
-          final center = renderBox.localToGlobal(
-            renderBox.size.center(Offset.zero),
-          );
-          _mousePositionNotifier.value = event.position - center;
-        }
-      },
-      onExit: (_) => _mousePositionNotifier.value = null,
+      onHover: (event) => _pointer.value = event.position,
+      onExit: (_) => _pointer.value = null,
       child: DecoratedBox(
         decoration: decoration,
         child: Padding(
-          padding: widget.padding ?? const EdgeInsets.all(8.0),
+          padding: widget.padding ?? const EdgeInsets.all(8),
           child: _DockConfig(
-            notifier: _mousePositionNotifier,
+            pointer: _pointer,
             itemDecoration: itemDecoration,
-            child: Row(
+            direction: widget.direction,
+            child: Flex(
+              direction: widget.direction,
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: _buildItems(context),
+              children: [
+                for (var i = 0; i < widget.items.length; i++) ...[
+                  if (widget.items[i] case final DockSeparator separator)
+                    separator
+                  else
+                    _DockItem(
+                      itemSize: widget.itemSize,
+                      maxScale: widget.maxScale,
+                      itemScale: widget.itemScale,
+                      distance: widget.distance,
+                      direction: widget.direction,
+                      child: widget.items[i],
+                    ),
+                  if (i != widget.items.length - 1)
+                    SizedBox(
+                      width: widget.direction == Axis.horizontal
+                          ? widget.gap
+                          : 0,
+                      height: widget.direction == Axis.vertical
+                          ? widget.gap
+                          : 0,
+                    ),
+                ],
+              ],
             ),
           ),
         ),
       ),
     );
   }
-
-  List<Widget> _buildItems(BuildContext context) {
-    final children = <Widget>[];
-    final isHorizontal = widget.direction == Axis.horizontal;
-    final itemWidths = <double>[];
-    var totalWidth = 0.0;
-
-    for (final item in widget.items) {
-      final width = item is DockSeparator
-          ? (isHorizontal ? item.width : item.height) +
-                (item.margin?.resolve(Directionality.of(context)) ??
-                        const EdgeInsets.symmetric(horizontal: 4.0))
-                    .horizontal
-          : widget.itemSize;
-      itemWidths.add(width);
-      totalWidth += width;
-    }
-
-    totalWidth += (widget.items.length - 1) * widget.gap;
-    var currentOffset = -totalWidth / 2;
-
-    for (var i = 0; i < widget.items.length; i++) {
-      final item = widget.items[i];
-      final width = itemWidths[i];
-      final centerOffset = currentOffset + width / 2;
-
-      if (item is DockSeparator) {
-        children.add(item);
-      } else {
-        children.add(
-          _DockItem(
-            key: ValueKey(i),
-            itemSize: widget.itemSize,
-            maxScale: widget.maxScale,
-            itemScale: widget.itemScale,
-            distance: widget.distance,
-            direction: widget.direction,
-            baseOffset: centerOffset,
-            child: item,
-          ),
-        );
-      }
-
-      if (i < widget.items.length - 1) {
-        children.add(
-          SizedBox(
-            width: isHorizontal ? widget.gap : 0,
-            height: isHorizontal ? 0 : widget.gap,
-          ),
-        );
-      }
-
-      currentOffset += width + widget.gap;
-    }
-
-    return children;
-  }
 }
 
 class _DockConfig extends InheritedWidget {
-  final ValueNotifier<Offset?> notifier;
+  final ValueNotifier<Offset?> pointer;
   final BoxDecoration itemDecoration;
+  final Axis direction;
 
   const _DockConfig({
-    required this.notifier,
+    required this.pointer,
     required this.itemDecoration,
+    required this.direction,
     required super.child,
   });
 
-  static _DockConfig? of(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<_DockConfig>();
+  static _DockConfig of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_DockConfig>()!;
   }
 
   @override
-  bool updateShouldNotify(_DockConfig oldWidget) =>
-      notifier != oldWidget.notifier ||
-      itemDecoration != oldWidget.itemDecoration;
+  bool updateShouldNotify(covariant _DockConfig oldWidget) {
+    return pointer != oldWidget.pointer ||
+        itemDecoration != oldWidget.itemDecoration ||
+        direction != oldWidget.direction;
+  }
 }
 
 class _DockItem extends StatelessWidget {
@@ -170,57 +137,58 @@ class _DockItem extends StatelessWidget {
   final double itemScale;
   final double distance;
   final Axis direction;
-  final double baseOffset;
   final Widget child;
 
   const _DockItem({
-    super.key,
     required this.itemSize,
     required this.maxScale,
     required this.itemScale,
     required this.distance,
     required this.direction,
-    required this.baseOffset,
     required this.child,
   });
 
-  double _calcScale(Offset? mouseOffset, double targetScale) {
-    if (mouseOffset == null) return 1.0;
-    final itemCenter = direction == Axis.horizontal
-        ? Offset(baseOffset, 0)
-        : Offset(0, baseOffset);
-    final dist = (mouseOffset - itemCenter).distance;
-    if (dist > distance) return 1.0;
-    return 1.0 + (targetScale - 1.0) * (1 - dist / distance);
+  double _scaleFor(BuildContext context, Offset? pointer) {
+    if (pointer == null) return 1;
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return 1;
+    final center = box.localToGlobal(box.size.center(Offset.zero));
+    final delta = direction == Axis.horizontal
+        ? (pointer.dx - center.dx).abs()
+        : (pointer.dy - center.dy).abs();
+    if (delta >= distance) return 1;
+    return 1 + (maxScale - 1) * (1 - delta / distance);
   }
 
   @override
   Widget build(BuildContext context) {
-    final config = _DockConfig.of(context)!;
-
+    final config = _DockConfig.of(context);
     return ValueListenableBuilder<Offset?>(
-      valueListenable: config.notifier,
-      builder: (context, mouseOffset, _) {
-        final scale = _calcScale(mouseOffset, maxScale);
-        final childScale = _calcScale(mouseOffset, itemScale);
-        final scaledSize = itemSize * scale;
-
+      valueListenable: config.pointer,
+      child: child,
+      builder: (context, pointer, child) {
+        final targetScale = _scaleFor(context, pointer);
         return TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 200),
+          tween: Tween(end: targetScale),
+          duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
-          tween: Tween(begin: 1.0, end: scale),
-          builder: (context, animatedScale, _) {
-            final size = itemSize * animatedScale;
+          child: child,
+          builder: (context, scale, child) {
+            final size = itemSize * scale;
+            final fraction = maxScale == 1 ? 0 : (scale - 1) / (maxScale - 1);
+            final contentScale = 1 + (itemScale - 1) * fraction;
             return SizedBox(
-              width: direction == Axis.horizontal ? scaledSize : itemSize,
-              height: direction == Axis.vertical ? scaledSize : itemSize,
-              child: Align(
+              width: direction == Axis.horizontal ? size : itemSize,
+              height: direction == Axis.vertical ? size : itemSize,
+              child: OverflowBox(
+                maxWidth: size,
+                maxHeight: size,
                 alignment: direction == Axis.horizontal
                     ? Alignment.bottomCenter
                     : Alignment.centerLeft,
-                child: _DockItemScaleProvider(
-                  scale: childScale,
-                  child: SizedBox(width: size, height: size, child: child),
+                child: _DockItemScale(
+                  scale: contentScale,
+                  child: SizedBox.square(dimension: size, child: child),
                 ),
               ),
             );
@@ -231,21 +199,22 @@ class _DockItem extends StatelessWidget {
   }
 }
 
-class _DockItemScaleProvider extends InheritedWidget {
+class _DockItemScale extends InheritedWidget {
   final double scale;
 
-  const _DockItemScaleProvider({required this.scale, required super.child});
+  const _DockItemScale({required this.scale, required super.child});
 
   static double of(BuildContext context) {
     return context
-            .dependOnInheritedWidgetOfExactType<_DockItemScaleProvider>()
+            .dependOnInheritedWidgetOfExactType<_DockItemScale>()
             ?.scale ??
-        1.0;
+        1;
   }
 
   @override
-  bool updateShouldNotify(_DockItemScaleProvider oldWidget) =>
-      scale != oldWidget.scale;
+  bool updateShouldNotify(covariant _DockItemScale oldWidget) {
+    return scale != oldWidget.scale;
+  }
 }
 
 class DockIcon extends StatelessWidget {
@@ -265,21 +234,20 @@ class DockIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = _DockConfig.of(context);
-    final baseDecoration = config?.itemDecoration ?? const BoxDecoration();
-    final mergedDecoration = _mergeDecoration(baseDecoration, decoration);
+    final itemDecoration = _mergeDecoration(config.itemDecoration, decoration);
+    final scale = _DockItemScale.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: padding ?? EdgeInsets.zero,
-        child: DecoratedBox(
-          decoration: mergedDecoration,
-          child: Center(
-            child: Builder(
-              builder: (context) {
-                final scale = _DockItemScaleProvider.of(context);
-                return Transform.scale(scale: scale, child: child);
-              },
+    return MouseRegion(
+      cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: padding ?? EdgeInsets.zero,
+          child: DecoratedBox(
+            decoration: itemDecoration,
+            child: Center(
+              child: Transform.scale(scale: scale, child: child),
             ),
           ),
         ),
@@ -296,22 +264,31 @@ class DockSeparator extends StatelessWidget {
 
   const DockSeparator({
     super.key,
-    this.width = 1.0,
-    this.height = 32.0,
+    this.width = 1,
+    this.height = 32,
     this.color,
     this.margin,
-  });
+  }) : assert(width > 0, 'width must be greater than 0'),
+       assert(height > 0, 'height must be greater than 0');
 
   @override
   Widget build(BuildContext context) {
+    final direction = _DockConfig.of(context).direction;
+    final horizontal = direction == Axis.horizontal;
+    final lineWidth = horizontal ? width : height;
+    final lineHeight = horizontal ? height : width;
+    final defaultMargin = horizontal
+        ? const EdgeInsets.symmetric(horizontal: 4)
+        : const EdgeInsets.symmetric(vertical: 4);
+
     return Padding(
-      padding: margin ?? const EdgeInsets.symmetric(horizontal: 4.0),
+      padding: margin ?? defaultMargin,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: color ?? const Color(0x40FFFFFF),
           borderRadius: BorderRadius.circular(width / 2),
         ),
-        child: SizedBox(width: width, height: height),
+        child: SizedBox(width: lineWidth, height: lineHeight),
       ),
     );
   }
@@ -319,7 +296,7 @@ class DockSeparator extends StatelessWidget {
 
 BoxDecoration _mergeDecoration(BoxDecoration base, BoxDecoration? override) {
   if (override == null) return base;
-  return BoxDecoration(
+  return base.copyWith(
     color: override.color ?? base.color,
     image: override.image ?? base.image,
     border: override.border ?? base.border,

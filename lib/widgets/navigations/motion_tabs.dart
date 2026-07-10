@@ -35,7 +35,10 @@ class MotionTabs extends StatefulWidget {
     this.gap = 8,
     this.animationDuration = const Duration(milliseconds: 220),
     this.animationCurve = Curves.easeOutCubic,
-  }) : assert(items.length > 0, 'items cannot be empty');
+  }) : assert(items.length > 0, 'items cannot be empty'),
+       assert(height > 0, 'height must be greater than 0'),
+       assert(borderRadius >= 0, 'borderRadius must be non-negative'),
+       assert(gap >= 0, 'gap must be non-negative');
 
   @override
   State<MotionTabs> createState() => _MotionTabsState();
@@ -211,7 +214,6 @@ class _MotionTabsState extends State<MotionTabs> {
                               selected: i == _selectedIndex,
                               textColor: widget.textColor,
                               selectedTextColor: widget.selectedTextColor,
-                              selectedColor: widget.selectedColor,
                               borderRadius: widget.borderRadius,
                               duration: widget.animationDuration,
                               curve: widget.animationCurve,
@@ -242,7 +244,6 @@ class _TabButton extends StatelessWidget {
   final bool selected;
   final Color textColor;
   final Color selectedTextColor;
-  final Color selectedColor;
   final double borderRadius;
   final Duration duration;
   final Curve curve;
@@ -256,7 +257,6 @@ class _TabButton extends StatelessWidget {
     required this.selected,
     required this.textColor,
     required this.selectedTextColor,
-    required this.selectedColor,
     required this.borderRadius,
     required this.duration,
     required this.curve,
@@ -270,52 +270,58 @@ class _TabButton extends StatelessWidget {
     final iconColor = selected ? selectedTextColor : textColor;
 
     return MouseRegion(
+      cursor: SystemMouseCursors.click,
       onEnter: (_) => onHover(),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: duration,
-          curve: curve,
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: const Color(0x00ffffff),
-            borderRadius: BorderRadius.circular(effectiveRadius),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (item.icon != null) ...[
-                TweenAnimationBuilder<Color?>(
-                  tween: ColorTween(begin: iconColor, end: iconColor),
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: item.label,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: duration,
+            curve: curve,
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: const Color(0x00ffffff),
+              borderRadius: BorderRadius.circular(effectiveRadius),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (item.icon != null) ...[
+                  TweenAnimationBuilder<Color?>(
+                    tween: ColorTween(end: iconColor),
+                    duration: duration,
+                    curve: curve,
+                    builder: (context, color, child) => IconTheme(
+                      data: IconThemeData(color: color, size: 18),
+                      child: child!,
+                    ),
+                    child: SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: FittedBox(child: item.icon),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                AnimatedDefaultTextStyle(
                   duration: duration,
                   curve: curve,
-                  builder: (context, color, child) => IconTheme(
-                    data: IconThemeData(color: color, size: 18),
-                    child: child!,
+                  style: TextStyle(
+                    color: selected ? selectedTextColor : textColor,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
                   ),
-                  child: SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: FittedBox(child: item.icon),
-                  ),
+                  child: Text(item.label, overflow: TextOverflow.ellipsis),
                 ),
-                const SizedBox(width: 8),
               ],
-              AnimatedDefaultTextStyle(
-                duration: duration,
-                curve: curve,
-                style: TextStyle(
-                  color: selected ? selectedTextColor : textColor,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
-                ),
-                child: Text(item.label, overflow: TextOverflow.ellipsis),
-              ),
-            ],
+            ),
           ),
         ),
       ),

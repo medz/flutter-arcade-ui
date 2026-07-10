@@ -1,45 +1,22 @@
+import 'dart:async';
 import 'dart:math' as math;
-import 'package:flutter/widgets.dart';
+
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
 
 class SpaceShooter extends StatefulWidget {
-  /// Color of the player's ship
   final Color playerColor;
-
-  /// Color of enemy ships
   final Color enemyColor;
-
-  /// Color of bullets
   final Color bulletColor;
-
-  /// Background color
   final Color backgroundColor;
-
-  /// Text color for score display
   final Color textColor;
-
-  /// Initial score (game over when reaches 0)
   final int initialScore;
-
-  /// How often enemies spawn (milliseconds)
   final int enemySpawnInterval;
-
-  /// How often bullets fire (milliseconds)
   final int bulletFireInterval;
-
-  /// Speed of enemy movement (pixels per frame)
   final double enemySpeed;
-
-  /// Speed of bullet movement (pixels per frame)
   final double bulletSpeed;
-
-  /// Whether to start the game automatically
   final bool autoStart;
-
-  /// Callback when game is over
   final VoidCallback? onGameOver;
-
-  /// Callback when score changes
   final ValueChanged<int>? onScoreChanged;
 
   const SpaceShooter({
@@ -52,240 +29,273 @@ class SpaceShooter extends StatefulWidget {
     this.initialScore = 10,
     this.enemySpawnInterval = 1500,
     this.bulletFireInterval = 300,
-    this.enemySpeed = 2.0,
-    this.bulletSpeed = 5.0,
+    this.enemySpeed = 2,
+    this.bulletSpeed = 5,
     this.autoStart = false,
     this.onGameOver,
     this.onScoreChanged,
-  });
+  }) : assert(initialScore > 0, 'initialScore must be greater than 0'),
+       assert(
+         enemySpawnInterval > 0,
+         'enemySpawnInterval must be greater than 0',
+       ),
+       assert(
+         bulletFireInterval > 0,
+         'bulletFireInterval must be greater than 0',
+       ),
+       assert(enemySpeed >= 0, 'enemySpeed must be non-negative'),
+       assert(bulletSpeed >= 0, 'bulletSpeed must be non-negative');
 
   @override
   State<SpaceShooter> createState() => _SpaceShooterState();
 }
 
 class _RepaintNotifier extends ChangeNotifier {
-  void notify() => notifyListeners();
+  void repaint() => notifyListeners();
 }
 
 class _SpaceShooterState extends State<SpaceShooter>
-    with SingleTickerProviderStateMixin {
-  late Ticker _ticker;
-  final _repaintNotifier = _RepaintNotifier();
-  final math.Random _random = math.Random();
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  static const _playerSize = 20.0;
+  static const _bulletWidth = 4.0;
+  static const _bulletHeight = 12.0;
+  static const _enemySize = 18.0;
 
-  // Game state
-  double _playerX = 0.5; // Normalized position (0-1)
-  int _score = 10;
+  final _scene = _Scene();
+  final _repaint = _RepaintNotifier();
+  final _random = math.Random();
+  late final Ticker _ticker;
+
+  int _score = 0;
   bool _isGameOver = false;
   bool _isPlaying = false;
+  bool _pausedByLifecycle = false;
   Size _size = Size.zero;
-
-  // Game entities
-  final List<_Bullet> _bullets = [];
-  final List<_Enemy> _enemies = [];
-
-  // Timing
-  int _tickCount = 0;
-  int _lastBulletFrame = 0;
-  int _lastEnemyFrame = 0;
-
-  // Constants
-  static const double _playerSize = 20.0;
-  static const double _bulletWidth = 4.0;
-  static const double _bulletHeight = 12.0;
-  static const double _enemySize = 18.0;
+  Duration? _lastElapsed;
+  double _bulletElapsedMs = 0;
+  double _enemyElapsedMs = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _score = widget.initialScore;
     _isPlaying = widget.autoStart;
     _ticker = createTicker(_tick);
-    if (widget.autoStart) {
-      _ticker.start();
+    if (_isPlaying) unawaited(_ticker.start());
+  }
+
+  @override
+  void didUpdateWidget(covariant SpaceShooter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_isPlaying && oldWidget.initialScore != widget.initialScore) {
+      _score = widget.initialScore;
+    }
+    if (!oldWidget.autoStart && widget.autoStart && !_isPlaying) {
+      _resetAndStart();
     }
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _pausedByLifecycle = false;
+      _startTickerIfNeeded();
+      return;
+    }
+    _pausedByLifecycle = true;
+    _ticker.stop();
+    _lastElapsed = null;
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
-    _repaintNotifier.dispose();
+    _repaint.dispose();
     super.dispose();
   }
 
   void _tick(Duration elapsed) {
     if (_size == Size.zero || _isGameOver || !_isPlaying) return;
 
-    _tickCount++;
+    final previous = _lastElapsed;
+    _lastElapsed = elapsed;
+    final deltaSeconds = previous == null
+        ? 1 / 60
+        : math.min((elapsed - previous).inMicroseconds / 1000000, 0.05);
+    final deltaMilliseconds = deltaSeconds * 1000;
 
+    _bulletElapsedMs += deltaMilliseconds;
+    _enemyElapsedMs += deltaMilliseconds;
     _spawnBullets();
     _spawnEnemies();
-    _updateBullets();
-    _updateEnemies();
-    _checkCollisions();
-    _checkMissedEnemies();
+    _updateEntities(deltaSeconds);
 
-    _repaintNotifier.notify();
+    final scoreDelta = _removeCollisions() - _removeMissedEnemies();
+    if (scoreDelta != 0) _updateScore(scoreDelta);
+    _repaint.repaint();
   }
 
   void _spawnBullets() {
-    final framesSinceBullet = _tickCount - _lastBulletFrame;
-    final framesPerBullet = (widget.bulletFireInterval / 16.67).round();
-
-    if (framesSinceBullet >= framesPerBullet) {
-      final playerPx = _playerX * _size.width;
+    while (_bulletElapsedMs >= widget.bulletFireInterval) {
+      final playerX = _scene.playerX * _size.width;
       final playerY = _size.height - _playerSize - 10;
-
-      // Spawn dual bullets
-      _bullets.add(_Bullet(x: playerPx - 8, y: playerY));
-      _bullets.add(_Bullet(x: playerPx + 8, y: playerY));
-
-      _lastBulletFrame = _tickCount;
+      _scene.bullets
+        ..add(_Bullet(x: playerX - 8, y: playerY))
+        ..add(_Bullet(x: playerX + 8, y: playerY));
+      _bulletElapsedMs -= widget.bulletFireInterval;
     }
   }
 
   void _spawnEnemies() {
-    final framesSinceEnemy = _tickCount - _lastEnemyFrame;
-    final framesPerEnemy = (widget.enemySpawnInterval / 16.67).round();
-
-    if (framesSinceEnemy >= framesPerEnemy) {
-      final x =
-          _enemySize + _random.nextDouble() * (_size.width - _enemySize * 2);
-      _enemies.add(_Enemy(x: x, y: -_enemySize));
-      _lastEnemyFrame = _tickCount;
+    while (_enemyElapsedMs >= widget.enemySpawnInterval) {
+      final usableWidth = _size.width - _enemySize * 2;
+      final x = usableWidth <= 0
+          ? _size.width / 2
+          : _enemySize + _random.nextDouble() * usableWidth;
+      _scene.enemies.add(_Enemy(x: x, y: -_enemySize));
+      _enemyElapsedMs -= widget.enemySpawnInterval;
     }
   }
 
-  void _updateBullets() {
-    _bullets.removeWhere((bullet) {
-      bullet.y -= widget.bulletSpeed;
+  void _updateEntities(double deltaSeconds) {
+    final frameScale = deltaSeconds * 60;
+    _scene.bullets.removeWhere((bullet) {
+      bullet.y -= widget.bulletSpeed * frameScale;
       return bullet.y < -_bulletHeight;
     });
-  }
-
-  void _updateEnemies() {
-    for (var enemy in _enemies) {
-      enemy.y += widget.enemySpeed;
+    for (final enemy in _scene.enemies) {
+      enemy.y += widget.enemySpeed * frameScale;
     }
   }
 
-  void _checkCollisions() {
-    final bulletsToRemove = <_Bullet>[];
-    final enemiesToRemove = <_Enemy>[];
+  int _removeCollisions() {
+    final bulletsToRemove = <_Bullet>{};
+    final enemiesToRemove = <_Enemy>{};
 
-    for (var bullet in _bullets) {
-      for (var enemy in _enemies) {
-        if (_collides(bullet, enemy)) {
-          if (!bulletsToRemove.contains(bullet)) {
-            bulletsToRemove.add(bullet);
-          }
-          if (!enemiesToRemove.contains(enemy)) {
-            enemiesToRemove.add(enemy);
-            _addScore(1);
-          }
+    for (final bullet in _scene.bullets) {
+      for (final enemy in _scene.enemies) {
+        if (enemiesToRemove.contains(enemy) || !_collides(bullet, enemy)) {
+          continue;
         }
+        bulletsToRemove.add(bullet);
+        enemiesToRemove.add(enemy);
+        break;
       }
     }
 
-    _bullets.removeWhere((b) => bulletsToRemove.contains(b));
-    _enemies.removeWhere((e) => enemiesToRemove.contains(e));
+    _scene.bullets.removeWhere(bulletsToRemove.contains);
+    _scene.enemies.removeWhere(enemiesToRemove.contains);
+    return enemiesToRemove.length;
+  }
+
+  int _removeMissedEnemies() {
+    final before = _scene.enemies.length;
+    _scene.enemies.removeWhere((enemy) => enemy.y > _size.height + _enemySize);
+    return before - _scene.enemies.length;
   }
 
   bool _collides(_Bullet bullet, _Enemy enemy) {
-    final dx = (bullet.x - enemy.x).abs();
-    final dy = (bullet.y - enemy.y).abs();
-    return dx < _enemySize / 2 && dy < _enemySize / 2;
+    final bulletRect = Rect.fromLTWH(
+      bullet.x - _bulletWidth / 2,
+      bullet.y,
+      _bulletWidth,
+      _bulletHeight,
+    );
+    final enemyRect = Rect.fromCenter(
+      center: Offset(enemy.x, enemy.y),
+      width: _enemySize,
+      height: _enemySize,
+    );
+    return bulletRect.overlaps(enemyRect);
   }
 
-  void _checkMissedEnemies() {
-    final missed = _enemies.where((e) => e.y > _size.height).toList();
-    for (var _ in missed) {
-      _addScore(-1);
-    }
-    _enemies.removeWhere((e) => e.y > _size.height);
-  }
-
-  void _addScore(int delta) {
+  void _updateScore(int delta) {
+    final score = math.max(0, _score + delta);
+    if (score == _score) return;
+    final gameOver = score == 0;
     setState(() {
-      _score += delta;
-      widget.onScoreChanged?.call(_score);
-
-      if (_score <= 0) {
-        _score = 0;
-        _isGameOver = true;
-        _ticker.stop();
-        widget.onGameOver?.call();
-      }
+      _score = score;
+      _isGameOver = gameOver;
     });
+    widget.onScoreChanged?.call(score);
+    if (gameOver) {
+      _ticker.stop();
+      _lastElapsed = null;
+      widget.onGameOver?.call();
+    }
   }
 
-  void _restart() {
+  void _resetAndStart() {
     setState(() {
       _score = widget.initialScore;
       _isGameOver = false;
       _isPlaying = true;
-      _bullets.clear();
-      _enemies.clear();
-      _tickCount = 0;
-      _lastBulletFrame = 0;
-      _lastEnemyFrame = 0;
-      _ticker.start();
     });
+    _scene
+      ..playerX = 0.5
+      ..bullets.clear()
+      ..enemies.clear();
+    _lastElapsed = null;
+    _bulletElapsedMs = 0;
+    _enemyElapsedMs = 0;
+    _repaint.repaint();
+    _startTickerIfNeeded();
   }
 
-  void _startGame() {
-    setState(() {
-      _isPlaying = true;
-      _score = widget.initialScore;
-      _bullets.clear();
-      _enemies.clear();
-      _tickCount = 0;
-      _lastBulletFrame = 0;
-      _lastEnemyFrame = 0;
-      _ticker.start();
-    });
+  void _startTickerIfNeeded() {
+    if (_isPlaying &&
+        !_isGameOver &&
+        !_pausedByLifecycle &&
+        !_ticker.isActive) {
+      unawaited(_ticker.start());
+    }
   }
 
-  void _handlePointerMove(Offset position) {
-    if (_isGameOver || _size == Size.zero) return;
-    setState(() {
-      _playerX = (position.dx / _size.width).clamp(0.0, 1.0);
-    });
+  void _movePlayer(Offset position) {
+    if (_isGameOver || _size.width <= 0) return;
+    final halfPlayer = _playerSize / 2;
+    final x = _size.width <= _playerSize
+        ? _size.width / 2
+        : position.dx.clamp(halfPlayer, _size.width - halfPlayer);
+    _scene.playerX = x / _size.width;
+    _repaint.repaint();
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        _size = Size(constraints.maxWidth, constraints.maxHeight);
+        if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
+          _size = constraints.biggest;
+        } else {
+          _size = Size.zero;
+        }
 
         return MouseRegion(
-          onHover: (event) => _handlePointerMove(event.localPosition),
+          onHover: (event) => _movePlayer(event.localPosition),
           child: GestureDetector(
-            onPanUpdate: (details) => _handlePointerMove(details.localPosition),
-            onTapDown: (details) => _handlePointerMove(details.localPosition),
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
+            behavior: HitTestBehavior.opaque,
+            onPanUpdate: (details) => _movePlayer(details.localPosition),
+            onTapDown: (details) => _movePlayer(details.localPosition),
+            child: ColoredBox(
               color: widget.backgroundColor,
               child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  // Game canvas
-                  CustomPaint(
-                    painter: _SpaceShooterPainter(
-                      playerX: _playerX,
-                      playerSize: _playerSize,
-                      bullets: _bullets,
-                      enemies: _enemies,
-                      playerColor: widget.playerColor,
-                      bulletColor: widget.bulletColor,
-                      enemyColor: widget.enemyColor,
-                      repaint: _repaintNotifier,
+                  RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _SpaceShooterPainter(
+                        scene: _scene,
+                        playerSize: _playerSize,
+                        playerColor: widget.playerColor,
+                        bulletColor: widget.bulletColor,
+                        enemyColor: widget.enemyColor,
+                        repaint: _repaint,
+                      ),
                     ),
-                    size: Size.infinite,
                   ),
-
-                  // Score display
                   if (_isPlaying)
                     Positioned(
                       top: 20,
@@ -300,80 +310,18 @@ class _SpaceShooterState extends State<SpaceShooter>
                         ),
                       ),
                     ),
-
-                  // Start screen overlay
                   if (!_isPlaying && !_isGameOver)
-                    Container(
-                      color: widget.backgroundColor.withValues(alpha: 0.8),
-                      child: Center(
-                        child: GestureDetector(
-                          onTap: _startGame,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 48,
-                              vertical: 24,
-                            ),
-                            decoration: BoxDecoration(
-                              color: widget.playerColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'PLAY',
-                              style: TextStyle(
-                                color: widget.backgroundColor,
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                    _GameOverlay(
+                      backgroundColor: widget.backgroundColor,
+                      foregroundColor: widget.playerColor,
+                      label: 'PLAY',
+                      onTap: _resetAndStart,
                     ),
-
-                  // Game over overlay
                   if (_isGameOver)
-                    Container(
-                      color: const Color(0x99000000),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'GAME OVER',
-                              style: TextStyle(
-                                color: widget.textColor,
-                                fontSize: 48,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            GestureDetector(
-                              onTap: _restart,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: widget.playerColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'RESTART',
-                                  style: TextStyle(
-                                    color: Color(0xFF000000),
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'monospace',
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    _GameOverOverlay(
+                      textColor: widget.textColor,
+                      buttonColor: widget.playerColor,
+                      onRestart: _resetAndStart,
                     ),
                 ],
               ),
@@ -385,29 +333,148 @@ class _SpaceShooterState extends State<SpaceShooter>
   }
 }
 
+class _GameOverlay extends StatelessWidget {
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final String label;
+  final VoidCallback onTap;
+
+  const _GameOverlay({
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: backgroundColor.withValues(alpha: 0.82),
+      child: Center(
+        child: Semantics(
+          button: true,
+          label: label,
+          child: GestureDetector(
+            onTap: onTap,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: foregroundColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 44,
+                  vertical: 20,
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: backgroundColor,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GameOverOverlay extends StatelessWidget {
+  final Color textColor;
+  final Color buttonColor;
+  final VoidCallback onRestart;
+
+  const _GameOverOverlay({
+    required this.textColor,
+    required this.buttonColor,
+    required this.onRestart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xD9000000),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'GAME OVER',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 42,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 20),
+            _GameOverlayButton(color: buttonColor, onTap: onRestart),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GameOverlayButton extends StatelessWidget {
+  final Color color;
+  final VoidCallback onTap;
+
+  const _GameOverlayButton({required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Restart game',
+      child: GestureDetector(
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+            child: Text(
+              'RESTART',
+              style: TextStyle(
+                color: Color(0xFF000000),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SpaceShooterPainter extends CustomPainter {
-  final double playerX;
+  final _Scene scene;
   final double playerSize;
-  final List<_Bullet> bullets;
-  final List<_Enemy> enemies;
   final Color playerColor;
   final Color bulletColor;
   final Color enemyColor;
-
-  late final Paint _playerPaint = Paint()..style = PaintingStyle.fill;
-  late final Paint _bulletPaint = Paint()..style = PaintingStyle.fill;
-  late final Paint _enemyPaint = Paint()..style = PaintingStyle.fill;
+  final Paint _playerPaint = Paint()..style = PaintingStyle.fill;
+  final Paint _bulletPaint = Paint()..style = PaintingStyle.fill;
+  final Paint _enemyPaint = Paint()..style = PaintingStyle.fill;
 
   _SpaceShooterPainter({
-    required this.playerX,
+    required this.scene,
     required this.playerSize,
-    required this.bullets,
-    required this.enemies,
     required this.playerColor,
     required this.bulletColor,
     required this.enemyColor,
-    super.repaint,
-  });
+    required Listenable repaint,
+  }) : super(repaint: repaint);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -418,24 +485,19 @@ class _SpaceShooterPainter extends CustomPainter {
 
   void _drawPlayer(Canvas canvas, Size size) {
     _playerPaint.color = playerColor;
-
-    final playerPx = playerX * size.width;
+    final playerX = scene.playerX * size.width;
     final playerY = size.height - playerSize - 10;
-
-    // Draw player as upward-pointing triangle
     final path = Path()
-      ..moveTo(playerPx, playerY - playerSize / 2)
-      ..lineTo(playerPx - playerSize / 2, playerY + playerSize / 2)
-      ..lineTo(playerPx + playerSize / 2, playerY + playerSize / 2)
+      ..moveTo(playerX, playerY - playerSize / 2)
+      ..lineTo(playerX - playerSize / 2, playerY + playerSize / 2)
+      ..lineTo(playerX + playerSize / 2, playerY + playerSize / 2)
       ..close();
-
     canvas.drawPath(path, _playerPaint);
   }
 
   void _drawBullets(Canvas canvas) {
     _bulletPaint.color = bulletColor;
-
-    for (var bullet in bullets) {
+    for (final bullet in scene.bullets) {
       canvas.drawRect(
         Rect.fromLTWH(
           bullet.x - _SpaceShooterState._bulletWidth / 2,
@@ -450,9 +512,7 @@ class _SpaceShooterPainter extends CustomPainter {
 
   void _drawEnemies(Canvas canvas) {
     _enemyPaint.color = enemyColor;
-
-    for (var enemy in enemies) {
-      // Draw enemy as downward-pointing triangle
+    for (final enemy in scene.enemies) {
       final path = Path()
         ..moveTo(enemy.x, enemy.y + _SpaceShooterState._enemySize / 2)
         ..lineTo(
@@ -464,17 +524,23 @@ class _SpaceShooterPainter extends CustomPainter {
           enemy.y - _SpaceShooterState._enemySize / 2,
         )
         ..close();
-
       canvas.drawPath(path, _enemyPaint);
     }
   }
 
   @override
   bool shouldRepaint(covariant _SpaceShooterPainter oldDelegate) {
-    return playerColor != oldDelegate.playerColor ||
+    return scene != oldDelegate.scene ||
+        playerColor != oldDelegate.playerColor ||
         bulletColor != oldDelegate.bulletColor ||
         enemyColor != oldDelegate.enemyColor;
   }
+}
+
+class _Scene {
+  double playerX = 0.5;
+  final bullets = <_Bullet>[];
+  final enemies = <_Enemy>[];
 }
 
 class _Bullet {

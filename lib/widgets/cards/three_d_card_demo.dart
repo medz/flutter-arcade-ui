@@ -68,6 +68,14 @@ class ThreeDCardDemo extends StatelessWidget {
                 child: Container(
                   height: 160,
                   decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        primaryColor.withValues(alpha: 0.45),
+                        surfaceColor,
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -79,10 +87,10 @@ class ThreeDCardDemo extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1713869820987-519844949a8a?q=80&w=3500&auto=format&fit=crop',
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                    child: Icon(
+                      Icons.view_in_ar_rounded,
+                      size: 72,
+                      color: primaryColor.withValues(alpha: 0.85),
                     ),
                   ),
                 ),

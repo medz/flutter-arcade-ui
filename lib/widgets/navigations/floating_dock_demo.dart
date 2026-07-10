@@ -11,22 +11,26 @@ class FloatingDockDemo extends StatelessWidget {
       child: FloatingDock(
         items: [
           FloatingDockItem(
-            icon: const Icon(Icons.home, size: 24),
+            icon: const Icon(Icons.home, size: 24, color: Color(0xFF404040)),
             title: 'Home',
             onTap: () {},
           ),
           FloatingDockItem(
-            icon: const Icon(Icons.search, size: 24),
+            icon: const Icon(Icons.search, size: 24, color: Color(0xFF404040)),
             title: 'Search',
             onTap: () {},
           ),
           FloatingDockItem(
-            icon: const Icon(Icons.favorite, size: 24),
+            icon: const Icon(
+              Icons.favorite,
+              size: 24,
+              color: Color(0xFF404040),
+            ),
             title: 'Favorites',
             onTap: () {},
           ),
           FloatingDockItem(
-            icon: const Icon(Icons.person, size: 24),
+            icon: const Icon(Icons.person, size: 24, color: Color(0xFF404040)),
             title: 'Profile',
             onTap: () {},
           ),

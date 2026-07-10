@@ -1,0 +1,15 @@
+{
+    "name": "LiquidGlassTabBars",
+    "group": "navigations",
+    "description": "Backdrop-aware floating tab groups with a translucent selection lens, badges, and an optional detached action.",
+    "sourcePath": "lib/widgets/navigations/liquid_glass_tab_bars.dart",
+    "demoPath": "lib/widgets/navigations/liquid_glass_tab_bars_demo.dart",
+    "docPath": "widgets/navigations/liquid-glass-tab-bars.md",
+    "tags": [
+        "tabs",
+        "navigation",
+        "glass",
+        "ios",
+        "badge"
+    ]
+}

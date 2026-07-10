@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 class FloatingDock extends StatefulWidget {
@@ -13,22 +14,28 @@ class FloatingDock extends StatefulWidget {
   const FloatingDock({
     super.key,
     required this.items,
-    this.baseItemSize = 48.0,
-    this.maxItemSize = 68.0,
-    this.distance = 150.0,
-    this.gap = 12.0,
+    this.baseItemSize = 48,
+    this.maxItemSize = 68,
+    this.distance = 150,
+    this.gap = 12,
     this.padding,
     this.decoration,
     this.itemDecoration,
-  });
+  }) : assert(items.length > 0, 'items cannot be empty'),
+       assert(baseItemSize > 0, 'baseItemSize must be greater than 0'),
+       assert(
+         maxItemSize >= baseItemSize,
+         'maxItemSize must be at least baseItemSize',
+       ),
+       assert(distance > 0, 'distance must be greater than 0'),
+       assert(gap >= 0, 'gap must be non-negative');
 
   @override
   State<FloatingDock> createState() => _FloatingDockState();
 }
 
 class _FloatingDockState extends State<FloatingDock> {
-  double? _mouseX;
-  final _keys = <GlobalKey>[];
+  final _pointerX = ValueNotifier<double?>(null);
 
   static const _defaultDecoration = BoxDecoration(
     color: Color(0xFFF5F5F5),
@@ -37,33 +44,24 @@ class _FloatingDockState extends State<FloatingDock> {
   static const _defaultItemDecoration = BoxDecoration(color: Color(0xFFE8E8E8));
 
   @override
-  void initState() {
-    super.initState();
-    _syncKeys();
-  }
-
-  @override
-  void didUpdateWidget(FloatingDock oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.items.length != widget.items.length) _syncKeys();
-  }
-
-  void _syncKeys() {
-    _keys
-      ..clear()
-      ..addAll(List.generate(widget.items.length, (_) => GlobalKey()));
+  void dispose() {
+    _pointerX.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final deco = _merge(_defaultDecoration, widget.decoration);
-    final itemDeco = _merge(_defaultItemDecoration, widget.itemDecoration);
+    final decoration = _merge(_defaultDecoration, widget.decoration);
+    final itemDecoration = _merge(
+      _defaultItemDecoration,
+      widget.itemDecoration,
+    );
 
     return MouseRegion(
-      onHover: (e) => setState(() => _mouseX = e.position.dx),
-      onExit: (_) => setState(() => _mouseX = null),
+      onHover: (event) => _pointerX.value = event.position.dx,
+      onExit: (_) => _pointerX.value = null,
       child: DecoratedBox(
-        decoration: deco,
+        decoration: decoration,
         child: Padding(
           padding:
               widget.padding ??
@@ -73,17 +71,18 @@ class _FloatingDockState extends State<FloatingDock> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               for (var i = 0; i < widget.items.length; i++) ...[
-                _DockIcon(
-                  key: _keys[i],
-                  gKey: _keys[i],
+                _FloatingDockIcon(
                   item: widget.items[i],
-                  mouseX: _mouseX,
+                  pointerX: _pointerX,
                   baseSize: widget.baseItemSize,
                   maxSize: widget.maxItemSize,
                   distance: widget.distance,
-                  decoration: _merge(itemDeco, widget.items[i].decoration),
+                  decoration: _merge(
+                    itemDecoration,
+                    widget.items[i].decoration,
+                  ),
                 ),
-                if (i < widget.items.length - 1) SizedBox(width: widget.gap),
+                if (i != widget.items.length - 1) SizedBox(width: widget.gap),
               ],
             ],
           ),
@@ -93,18 +92,17 @@ class _FloatingDockState extends State<FloatingDock> {
   }
 }
 
-class _DockIcon extends StatefulWidget {
-  final GlobalKey gKey;
+class _FloatingDockIcon extends StatefulWidget {
   final FloatingDockItem item;
-  final double? mouseX;
-  final double baseSize, maxSize, distance;
+  final ValueListenable<double?> pointerX;
+  final double baseSize;
+  final double maxSize;
+  final double distance;
   final BoxDecoration decoration;
 
-  const _DockIcon({
-    super.key,
-    required this.gKey,
+  const _FloatingDockIcon({
     required this.item,
-    required this.mouseX,
+    required this.pointerX,
     required this.baseSize,
     required this.maxSize,
     required this.distance,
@@ -112,73 +110,88 @@ class _DockIcon extends StatefulWidget {
   });
 
   @override
-  State<_DockIcon> createState() => _DockIconState();
+  State<_FloatingDockIcon> createState() => _FloatingDockIconState();
 }
 
-class _DockIconState extends State<_DockIcon> {
+class _FloatingDockIconState extends State<_FloatingDockIcon> {
   bool _hovered = false;
 
-  double get _scale {
-    if (widget.mouseX == null) return 1.0;
-    final box = widget.gKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null) return 1.0;
-    final center = box.localToGlobal(Offset.zero).dx + box.size.width / 2;
-    final dist = (widget.mouseX! - center).abs();
-    if (dist > widget.distance) return 1.0;
-    return 1.0 +
-        (widget.maxSize / widget.baseSize - 1.0) * (1 - dist / widget.distance);
+  double _scale(double? pointerX) {
+    if (pointerX == null) return 1;
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return 1;
+    final center = box.localToGlobal(box.size.center(Offset.zero)).dx;
+    final delta = (pointerX - center).abs();
+    if (delta >= widget.distance) return 1;
+    final maxScale = widget.maxSize / widget.baseSize;
+    return 1 + (maxScale - 1) * (1 - delta / widget.distance);
   }
 
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
+      cursor: widget.item.onTap == null
+          ? MouseCursor.defer
+          : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: widget.item.onTap,
-        child: TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          tween: Tween(begin: widget.baseSize, end: widget.baseSize * _scale),
-          builder: (context, s, _) {
-            final offset = widget.baseSize - s;
-            return SizedBox(
-              width: s,
-              height: widget.baseSize,
-              child: OverflowBox(
-                maxWidth: s,
-                maxHeight: s,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Transform.translate(
-                      offset: Offset(0, offset),
-                      child: DecoratedBox(
-                        decoration: widget.decoration.copyWith(
-                          borderRadius:
-                              widget.decoration.borderRadius ??
-                              BorderRadius.circular(s * 0.25),
-                        ),
-                        child: SizedBox(
-                          width: s,
-                          height: s,
-                          child: FractionallySizedBox(
-                            widthFactor: 0.5,
-                            heightFactor: 0.5,
-                            child: FittedBox(child: widget.item.icon),
+        child: ValueListenableBuilder<double?>(
+          valueListenable: widget.pointerX,
+          builder: (context, pointerX, _) {
+            return TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              tween: Tween(end: widget.baseSize * _scale(pointerX)),
+              builder: (context, size, _) {
+                final offset = widget.baseSize - size;
+                return SizedBox(
+                  width: size,
+                  height: widget.baseSize,
+                  child: OverflowBox(
+                    maxWidth: size,
+                    maxHeight: size,
+                    alignment: Alignment.bottomCenter,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Transform.translate(
+                          offset: Offset(0, offset),
+                          child: DecoratedBox(
+                            decoration: widget.decoration.copyWith(
+                              borderRadius:
+                                  widget.decoration.borderRadius ??
+                                  BorderRadius.circular(size * 0.25),
+                            ),
+                            child: SizedBox.square(
+                              dimension: size,
+                              child: FractionallySizedBox(
+                                widthFactor: 0.5,
+                                heightFactor: 0.5,
+                                child: FittedBox(child: widget.item.icon),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        if (widget.item.title case final title?)
+                          Positioned(
+                            bottom: size - offset + 6,
+                            left: size / 2,
+                            child: FractionalTranslation(
+                              translation: const Offset(-0.5, 0),
+                              child: _DockTooltip(
+                                title: title,
+                                visible: _hovered,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    if (widget.item.title != null)
-                      Positioned(
-                        bottom: s - offset + 6,
-                        left: s / 2,
-                        child: _Tooltip(widget.item.title!, _hovered),
-                      ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         ),
@@ -187,34 +200,35 @@ class _DockIconState extends State<_DockIcon> {
   }
 }
 
-class _Tooltip extends StatelessWidget {
+class _DockTooltip extends StatelessWidget {
   final String title;
   final bool visible;
-  const _Tooltip(this.title, this.visible);
+
+  const _DockTooltip({required this.title, required this.visible});
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 150),
-      tween: Tween(begin: 0, end: visible ? 1.0 : 0.0),
-      builder: (context, v, child) {
-        if (v == 0) return const SizedBox.shrink();
-        return FractionalTranslation(
-          translation: Offset(-0.5, (1 - v) * 0.5),
-          child: Opacity(opacity: v, child: child),
-        );
-      },
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF404040)),
+    return IgnorePointer(
+      child: AnimatedOpacity(
+        opacity: visible ? 1 : 0,
+        duration: const Duration(milliseconds: 120),
+        child: AnimatedSlide(
+          offset: visible ? Offset.zero : const Offset(0, 0.25),
+          duration: const Duration(milliseconds: 120),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF202126),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFF3A3B42)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                title,
+                maxLines: 1,
+                style: const TextStyle(fontSize: 12, color: Color(0xFFF5F5F5)),
+              ),
+            ),
           ),
         ),
       ),
@@ -236,16 +250,17 @@ class FloatingDockItem {
   });
 }
 
-BoxDecoration _merge(BoxDecoration base, BoxDecoration? o) {
-  if (o == null) return base;
-  return BoxDecoration(
-    color: o.color ?? base.color,
-    image: o.image ?? base.image,
-    border: o.border ?? base.border,
-    borderRadius: o.borderRadius ?? base.borderRadius,
-    boxShadow: o.boxShadow ?? base.boxShadow,
-    gradient: o.gradient ?? base.gradient,
-    backgroundBlendMode: o.backgroundBlendMode ?? base.backgroundBlendMode,
-    shape: o.shape,
+BoxDecoration _merge(BoxDecoration base, BoxDecoration? override) {
+  if (override == null) return base;
+  return base.copyWith(
+    color: override.color ?? base.color,
+    image: override.image ?? base.image,
+    border: override.border ?? base.border,
+    borderRadius: override.borderRadius ?? base.borderRadius,
+    boxShadow: override.boxShadow ?? base.boxShadow,
+    gradient: override.gradient ?? base.gradient,
+    backgroundBlendMode:
+        override.backgroundBlendMode ?? base.backgroundBlendMode,
+    shape: override.shape,
   );
 }

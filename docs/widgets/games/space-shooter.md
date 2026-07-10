@@ -26,8 +26,8 @@ A minimalist space shooter game inspired by 1KB game challenges and classic arca
 | `initialScore` | `int` | `10` | Starting score (game over when reaches 0) |
 | `enemySpawnInterval` | `int` | `1500` | How often enemies spawn (milliseconds) |
 | `bulletFireInterval` | `int` | `300` | How often bullets fire (milliseconds) |
-| `enemySpeed` | `double` | `2.0` | Speed of enemy movement (pixels per frame) |
-| `bulletSpeed` | `double` | `5.0` | Speed of bullet movement (pixels per frame) |
+| `enemySpeed` | `double` | `2.0` | Enemy speed in logical pixels per 60 Hz frame, normalized across refresh rates |
+| `bulletSpeed` | `double` | `5.0` | Bullet speed in logical pixels per 60 Hz frame, normalized across refresh rates |
 | `autoStart` | `bool` | `false` | Whether to start game automatically |
 | `onGameOver` | `VoidCallback?` | `null` | Callback when game is over |
 | `onScoreChanged` | `ValueChanged<int>?` | `null` | Callback when score changes |
@@ -137,7 +137,7 @@ SpaceShooter(
 
 ## Performance
 
-The game runs at 60 FPS using Flutter's Ticker API and CustomPainter for efficient rendering. All game logic and rendering is contained in a single file (~400 lines) for easy copying and customization.
+The game uses elapsed time rather than frame counts, so movement and spawn timing stay consistent across refresh rates. Rendering is isolated in a `CustomPainter`, the ticker pauses while the app is inactive, and every controller/notifier is disposed with the widget.
 
 ## Tips
 

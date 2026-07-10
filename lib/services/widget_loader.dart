@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
 import '../models/widget_metadata.dart';
 
 /// Service for loading and managing widget metadata and source code.
 class WidgetLoader {
-  /// Registry of all available widgets in the library
   /// Registry of all available widgets in the library
   static List<WidgetMetadata> _widgets = [];
 
@@ -47,14 +47,14 @@ class WidgetLoader {
 
       // Sort widgets by name
       loadedWidgets.sort((a, b) => a.name.compareTo(b.name));
-      _widgets = loadedWidgets;
+      _widgets = List.unmodifiable(loadedWidgets);
     } catch (e) {
       debugPrint('Error initializing WidgetLoader: $e');
     }
   }
 
   /// Get all widgets
-  static List<WidgetMetadata> get widgets => List.unmodifiable(_widgets);
+  static List<WidgetMetadata> get widgets => _widgets;
 
   /// Get widgets by group/category
   static List<WidgetMetadata> getWidgetsByGroup(String group) {
@@ -68,10 +68,10 @@ class WidgetLoader {
 
   /// Find a widget by identifier (e.g., "backgrounds/flickering_grid")
   static WidgetMetadata? findByIdentifier(String identifier) {
-    return _widgets.cast<WidgetMetadata?>().firstWhere(
-      (w) => w?.identifier == identifier,
-      orElse: () => null,
-    );
+    for (final widget in _widgets) {
+      if (widget.identifier == identifier) return widget;
+    }
+    return null;
   }
 
   /// Load the source code for a widget

@@ -7,20 +7,16 @@ class DockDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.grey[100],
-      padding: const EdgeInsets.all(24),
-      child: const Center(
-        child: Dock(
-          items: [
-            DockIcon(child: Icon(Icons.home)),
-            DockIcon(child: Icon(Icons.mail)),
-            DockIcon(child: Icon(Icons.home)),
-            DockIcon(child: Icon(Icons.folder)),
-            DockSeparator(),
-            DockIcon(child: Icon(Icons.settings)),
-          ],
-        ),
+    return const Center(
+      child: Dock(
+        items: [
+          DockIcon(child: Icon(Icons.home)),
+          DockIcon(child: Icon(Icons.mail)),
+          DockIcon(child: Icon(Icons.photo_library_outlined)),
+          DockIcon(child: Icon(Icons.folder)),
+          DockSeparator(),
+          DockIcon(child: Icon(Icons.settings)),
+        ],
       ),
     );
   }

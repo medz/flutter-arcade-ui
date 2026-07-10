@@ -54,6 +54,9 @@ class WidgetMetadata {
   /// Get the display category name with proper capitalization
   String get categoryName => capitalize(group);
 
+  /// Public documentation route for this widget.
+  String get routePath => '/widgets/${identifier.replaceAll('_', '-')}';
+
   static String capitalize(String input) {
     if (input.isEmpty) return input;
     return input[0].toUpperCase() + input.substring(1);

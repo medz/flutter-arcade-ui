@@ -25,7 +25,8 @@ Our widgets are organized into the following categories:
 | **Backgrounds** | Animated background effects | FlickeringGrid, BlackHoleBackground |
 | **Borders** | Glowing and animated border effects | GlidingGlowBox |
 | **Cards** | Interactive card components | ThreeDCard |
-| **Navigations** | Navigation UI components | Dock, FloatingDock |
+| **Games** | Interactive game components | SpaceShooter |
+| **Navigations** | Navigation UI components | Dock, FloatingDock, MotionTabs, LiquidGlassTabBars |
 
 ## How to Use
 

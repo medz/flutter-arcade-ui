@@ -1,19 +1,26 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:unrouter/flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../../components/markdown_renderer.dart';
+import '../../models/widget_metadata.dart';
 import '../../services/docs_loader.dart';
 import '../../services/widget_loader.dart';
-import '../../widgets/backgrounds/flickering_grid_demo.dart';
+import '../../theme/arcade_theme.dart';
 import '../../widgets/backgrounds/black_hole_background_demo.dart';
-import '../../widgets/navigations/dock_demo.dart';
-import '../../widgets/navigations/floating_dock_demo.dart';
-import '../../widgets/navigations/motion_tabs_demo.dart';
+import '../../widgets/backgrounds/flickering_grid_demo.dart';
 import '../../widgets/borders/gliding_glow_box_demo.dart';
 import '../../widgets/cards/three_d_card_demo.dart';
 import '../../widgets/games/space_shooter_demo.dart';
+import '../../widgets/navigations/dock_demo.dart';
+import '../../widgets/navigations/floating_dock_demo.dart';
+import '../../widgets/navigations/liquid_glass_tab_bars_demo.dart';
+import '../../widgets/navigations/motion_tabs_demo.dart';
 
-/// Widget detail page (/docs/:group/:name)
+const _githubUrl = 'https://github.com/medz/flutter-arcade-ui';
+
 class WidgetDetailPage extends StatefulWidget {
   final String group;
   final String name;
@@ -25,9 +32,21 @@ class WidgetDetailPage extends StatefulWidget {
 }
 
 class _WidgetDetailPageState extends State<WidgetDetailPage> {
-  List<String> _tocItems = [];
-  final Map<String, GlobalKey> _headingKeys = {};
-  final ScrollController _scrollController = ScrollController();
+  final _headingKeys = <String, GlobalKey>{};
+  final _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(covariant WidgetDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.group == widget.group && oldWidget.name == widget.name) {
+      return;
+    }
+
+    _headingKeys.clear();
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+  }
 
   @override
   void dispose() {
@@ -36,309 +55,249 @@ class _WidgetDetailPageState extends State<WidgetDetailPage> {
   }
 
   @override
-  void didUpdateWidget(WidgetDetailPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Reset TOC when route changes
-    if (oldWidget.group != widget.group || oldWidget.name != widget.name) {
-      setState(() {
-        _tocItems = [];
-        _headingKeys.clear();
-      });
-    }
-  }
-
-  /// Extract headings from markdown content (lines starting with ##)
-  List<String> _extractHeadings(String markdown) {
-    final headings = <String>[];
-    final lines = markdown.split('\n');
-
-    for (var line in lines) {
-      final trimmed = line.trim();
-      if (trimmed.startsWith('## ')) {
-        headings.add(trimmed.substring(3).trim());
-      }
-    }
-
-    return headings;
-  }
-
-  /// Scroll to a specific heading
-  void _scrollToHeading(String heading) {
-    final key = _headingKeys[heading];
-    if (key != null && key.currentContext != null) {
-      Scrollable.ensureVisible(
-        key.currentContext!,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        alignment: 0.1, // Position heading near the top
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Convert kebab-case URL parameters to snake_case for identifier
-    final snakeCaseName = widget.name.replaceAll('-', '_');
-    final identifier = '${widget.group}/$snakeCaseName';
+    final identifier = '${widget.group}/${widget.name.replaceAll('-', '_')}';
     final metadata = WidgetLoader.findByIdentifier(identifier);
+    if (metadata == null) return _NotFound(identifier: identifier);
 
-    if (metadata == null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              Text(
-                'Widget not found: $identifier',
-                style: GoogleFonts.inter(fontSize: 18),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final markdown = metadata.docPath == null
+        ? ''
+        : DocsLoader.read(metadata.docPath!);
+    final headings = _extractHeadings(markdown);
+    _syncHeadingKeys(headings);
 
-    final isDesktop = MediaQuery.of(context).size.width >= 1200;
-
-    // Update page title
+    final showTableOfContents = MediaQuery.sizeOf(context).width >= 1180;
     return Title(
       title: '${metadata.name} - Flutter Arcade UI',
-      color: Theme.of(context).primaryColor,
-      child: Scaffold(
-        body: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Main Content
-            Expanded(
+      color: ArcadeColors.violet,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Scrollbar(
+              controller: _scrollController,
               child: SingleChildScrollView(
                 controller: _scrollController,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 48,
-                  vertical: 32,
+                padding: EdgeInsets.fromLTRB(
+                  MediaQuery.sizeOf(context).width < 700 ? 20 : 40,
+                  34,
+                  MediaQuery.sizeOf(context).width < 700 ? 20 : 40,
+                  72,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Breadcrumbs
-                    _Breadcrumbs(group: widget.group, name: metadata.name),
-                    const SizedBox(height: 32),
-
-                    // Title
-                    Text(
-                      metadata.name,
-                      style: GoogleFonts.inter(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Description
-                    Text(
-                      metadata.description,
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.7),
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-
-                    // Documentation Content
-                    if (metadata.docPath != null)
-                      FutureBuilder<String>(
-                        future: DocsLoader.loadMarkdown(metadata.docPath!),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-
-                          if (snapshot.hasError || !snapshot.hasData) {
-                            return const SizedBox.shrink();
-                          }
-
-                          // Extract TOC items when markdown is loaded
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (!mounted) return;
-                            final headings = _extractHeadings(snapshot.data!);
-                            if (_tocItems.length != headings.length ||
-                                !_tocItems.every((e) => headings.contains(e))) {
-                              setState(() {
-                                _tocItems = headings;
-                                _headingKeys.clear();
-                                for (var heading in headings) {
-                                  _headingKeys[heading] = GlobalKey();
-                                }
-                              });
-                            }
-                          });
-
-                          return MarkdownRenderer(
-                            markdown: snapshot.data!,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 900),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Breadcrumbs(metadata: metadata),
+                        const SizedBox(height: 30),
+                        Text(
+                          metadata.name,
+                          style: Theme.of(context).textTheme.displaySmall
+                              ?.copyWith(
+                                fontSize: MediaQuery.sizeOf(context).width < 600
+                                    ? 38
+                                    : 46,
+                                fontWeight: FontWeight.w900,
+                                height: 1.05,
+                                letterSpacing: -1.8,
+                              ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          metadata.description,
+                          style: const TextStyle(
+                            color: ArcadeColors.muted,
+                            fontSize: 17,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        if (markdown.isNotEmpty)
+                          MarkdownRenderer(
+                            markdown: markdown,
                             headingKeys: _headingKeys,
                             previewWidgets: {
                               identifier:
-                                  _getPreviewWidget(identifier) ??
-                                  const SizedBox(),
+                                  _previewFor(identifier) ?? const SizedBox(),
                             },
-                          );
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Right Sidebar (Table of Contents) - Desktop only
-            if (isDesktop)
-              Container(
-                width: 240,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 32,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    left: BorderSide(
-                      color: Theme.of(
-                        context,
-                      ).dividerColor.withValues(alpha: 0.1),
+                          ),
+                      ],
                     ),
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'On This Page',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Dynamically generate TOC links from markdown headings
-                    ..._tocItems.map(
-                      (title) => _TOCLink(
-                        title: title,
-                        onTap: () => _scrollToHeading(title),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    const Divider(height: 1),
-                    const SizedBox(height: 32),
-                    _ExternalLink(
-                      icon: Icons.star_outline,
-                      title: 'Star on GitHub',
-                      url: 'https://github.com/medz/flutter-arcade-ui',
-                    ),
-                    _ExternalLink(
-                      icon: Icons.bug_report_outlined,
-                      title: 'Create Issues',
-                      url: 'https://github.com/medz/flutter-arcade-ui/issues',
-                    ),
-                  ],
+              ),
+            ),
+          ),
+          if (showTableOfContents)
+            SizedBox(
+              width: 230,
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  border: Border(left: BorderSide(color: ArcadeColors.border)),
+                ),
+                child: _TableOfContents(
+                  headings: headings,
+                  onHeadingTap: _scrollToHeading,
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget? _getPreviewWidget(String identifier) {
-    switch (identifier) {
-      case 'backgrounds/flickering_grid':
-        return const FlickeringGridDemo();
-      case 'backgrounds/black_hole_background':
-        return const BlackHoleBackgroundDemo();
-      case 'navigations/dock':
-        return const DockDemo();
-      case 'navigations/floating_dock':
-        return const FloatingDockDemo();
-      case 'navigations/motion_tabs':
-        return const MotionTabsDemo();
-      case 'borders/gliding_glow_box':
-        return const GlidingGlowBoxDemo();
-      case 'cards/three_d_card':
-        return const ThreeDCardDemo();
-      case 'games/space_shooter':
-        return const SpaceShooterDemo();
-      default:
-        return null;
+  void _syncHeadingKeys(List<String> headings) {
+    _headingKeys.removeWhere((heading, _) => !headings.contains(heading));
+    for (final heading in headings) {
+      _headingKeys.putIfAbsent(heading, GlobalKey.new);
     }
   }
-}
 
-class _Breadcrumbs extends StatelessWidget {
-  final String group;
-  final String name;
-
-  const _Breadcrumbs({required this.group, required this.name});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final mutedColor = colorScheme.onSurface.withValues(alpha: 0.6);
-
-    return Row(
-      children: [
-        Text(
-          'Widgets',
-          style: GoogleFonts.inter(fontSize: 14, color: mutedColor),
-        ),
-        const SizedBox(width: 8),
-        Icon(Icons.chevron_right, size: 16, color: mutedColor),
-        const SizedBox(width: 8),
-        Text(
-          group[0].toUpperCase() + group.substring(1),
-          style: GoogleFonts.inter(fontSize: 14, color: mutedColor),
-        ),
-        const SizedBox(width: 8),
-        Icon(Icons.chevron_right, size: 16, color: mutedColor),
-        const SizedBox(width: 8),
-        Text(
-          name,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: colorScheme.onSurface,
-          ),
-        ),
-      ],
+  void _scrollToHeading(String heading) {
+    final context = _headingKeys[heading]?.currentContext;
+    if (context == null) return;
+    unawaited(
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        alignment: 0.08,
+      ),
     );
   }
 }
 
-class _TOCLink extends StatelessWidget {
-  final String title;
-  final VoidCallback? onTap;
+List<String> _extractHeadings(String markdown) {
+  return [
+    for (final line in markdown.split('\n'))
+      if (line.trimLeft().startsWith('## ')) line.trim().substring(3).trim(),
+  ];
+}
 
-  const _TOCLink({required this.title, this.onTap});
+Widget? _previewFor(String identifier) {
+  return switch (identifier) {
+    'backgrounds/flickering_grid' => const FlickeringGridDemo(),
+    'backgrounds/black_hole_background' => const BlackHoleBackgroundDemo(),
+    'navigations/dock' => const DockDemo(),
+    'navigations/floating_dock' => const FloatingDockDemo(),
+    'navigations/motion_tabs' => const MotionTabsDemo(),
+    'navigations/liquid_glass_tab_bars' => const LiquidGlassTabBarsDemo(),
+    'borders/gliding_glow_box' => const GlidingGlowBoxDemo(),
+    'cards/three_d_card' => const ThreeDCardDemo(),
+    'games/space_shooter' => const SpaceShooterDemo(),
+    _ => null,
+  };
+}
+
+class _Breadcrumbs extends StatelessWidget {
+  final WidgetMetadata metadata;
+
+  const _Breadcrumbs({required this.metadata});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: ArcadeColors.muted,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+    );
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          InkWell(
+            onTap: () => unawaited(useRouter(context).push('/widgets')),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Text('Widgets', style: style),
+            ),
+          ),
+          const _BreadcrumbDivider(),
+          Text(metadata.categoryName, style: style),
+          const _BreadcrumbDivider(),
+          Text(
+            metadata.name,
+            style: style?.copyWith(color: ArcadeColors.violet),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BreadcrumbDivider extends StatelessWidget {
+  const _BreadcrumbDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10),
+      child: Icon(
+        Icons.chevron_right_rounded,
+        size: 17,
+        color: ArcadeColors.muted,
+      ),
+    );
+  }
+}
+
+class _TableOfContents extends StatelessWidget {
+  final List<String> headings;
+  final ValueChanged<String> onHeadingTap;
+
+  const _TableOfContents({required this.headings, required this.onHeadingTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scrollbar(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 34, 20, 28),
+        children: [
+          const Text(
+            'On This Page',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 14),
+          for (final heading in headings)
+            _TocLink(title: heading, onTap: () => onHeadingTap(heading)),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Divider(height: 1),
+          ),
+          _ExternalLink(
+            icon: Icons.star_border_rounded,
+            title: 'Star on GitHub',
+            uri: Uri.parse(_githubUrl),
+          ),
+          _ExternalLink(
+            icon: Icons.bug_report_outlined,
+            title: 'Create Issues',
+            uri: Uri.parse('$_githubUrl/issues'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TocLink extends StatelessWidget {
+  final String title;
+  final VoidCallback onTap;
+
+  const _TocLink({required this.title, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(5),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
         child: Text(
           title,
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
+          style: const TextStyle(color: ArcadeColors.muted, fontSize: 13),
         ),
       ),
     );
@@ -348,54 +307,72 @@ class _TOCLink extends StatelessWidget {
 class _ExternalLink extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String url;
+  final Uri uri;
 
   const _ExternalLink({
     required this.icon,
     required this.title,
-    required this.url,
+    required this.uri,
   });
-
-  Future<void> _launchUrl() async {
-    final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      debugPrint('Could not launch $url');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: _launchUrl,
+    return InkWell(
+      onTap: () =>
+          unawaited(launchUrl(uri, mode: LaunchMode.externalApplication)),
+      borderRadius: BorderRadius.circular(5),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.8),
+            Icon(icon, size: 18, color: ArcadeColors.muted),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: ArcadeColors.muted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-            const Spacer(),
-            Icon(
-              Icons.arrow_outward,
-              size: 12,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
+            const Icon(
+              Icons.north_east_rounded,
+              size: 14,
+              color: ArcadeColors.muted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotFound extends StatelessWidget {
+  final String identifier;
+
+  const _NotFound({required this.identifier});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 44,
+              color: ArcadeColors.muted,
+            ),
+            const SizedBox(height: 16),
+            Text('Widget not found: $identifier'),
+            const SizedBox(height: 18),
+            OutlinedButton(
+              onPressed: () => unawaited(useRouter(context).push('/widgets')),
+              child: const Text('Back to widgets'),
             ),
           ],
         ),

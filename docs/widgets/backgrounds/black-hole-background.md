@@ -44,8 +44,8 @@ BlackHoleBackground(
 
 ```dart
 BlackHoleBackground(
-  strokeColor: Colors.purple.withOpacity(0.3),
-  particleColor: Colors.white.withOpacity(0.5),
+  strokeColor: Colors.purple.withValues(alpha: 0.3),
+  particleColor: Colors.white.withValues(alpha: 0.5),
   numberOfLines: 72,
   numberOfDiscs: 60,
 )
@@ -55,8 +55,8 @@ BlackHoleBackground(
 
 ```dart
 BlackHoleBackground(
-  strokeColor: Colors.grey.withOpacity(0.1),
-  particleColor: Colors.white.withOpacity(0.2),
+  strokeColor: Colors.grey.withValues(alpha: 0.1),
+  particleColor: Colors.white.withValues(alpha: 0.2),
   numberOfLines: 24,
   numberOfDiscs: 30,
 )

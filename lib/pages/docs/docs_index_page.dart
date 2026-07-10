@@ -1,190 +1,174 @@
-import 'package:flutter/material.dart';
-import 'package:unrouter/unrouter.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../services/widget_loader.dart';
-import '../../models/widget_metadata.dart';
+import 'dart:async';
 
-/// Documentation index page (/docs)
+import 'package:flutter/material.dart';
+import 'package:unrouter/flutter.dart';
+
+import '../../models/widget_metadata.dart';
+import '../../services/widget_loader.dart';
+import '../../theme/arcade_theme.dart';
+
 class DocsIndexPage extends StatelessWidget {
   const DocsIndexPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Group widgets by category
     final groups = <String, List<WidgetMetadata>>{};
-    for (var widget in WidgetLoader.widgets) {
-      if (!groups.containsKey(widget.group)) {
-        groups[widget.group] = [];
-      }
-      groups[widget.group]!.add(widget);
+    for (final widget in WidgetLoader.widgets) {
+      (groups[widget.group] ??= []).add(widget);
     }
 
     return Title(
-      title: 'Widget Index - Flutter Arcade UI',
-      color: Theme.of(context).primaryColor,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Widgets',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Widget Index',
-              style: GoogleFonts.outfit(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                height: 1.1,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'List of all the widgets provided by Arcade UI.',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-            ),
-            const SizedBox(height: 48),
-            // All Widgets Section
-            Text(
-              'All widgets',
-              style: GoogleFonts.outfit(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            ...groups.entries.map((entry) {
-              return Column(
+      title: 'Widgets - Flutter Arcade UI',
+      color: ArcadeColors.violet,
+      child: Scrollbar(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.sizeOf(context).width < 700 ? 20 : 42,
+            vertical: 40,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 960),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Row(
-                      children: [
-                        Text(
-                          '${entry.key[0].toUpperCase()}${entry.key.substring(1)}',
-                          style: GoogleFonts.inter(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '(${entry.value.length})',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
+                  Text(
+                    'Widget Index',
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1.5,
                     ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).dividerColor.withValues(alpha: 0.2),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Browse every copy-ready widget in Arcade UI.',
+                    style: TextStyle(
+                      color: ArcadeColors.muted,
+                      fontSize: 17,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 42),
+                  for (final entry in groups.entries) ...[
+                    _GroupHeader(
+                      title: WidgetMetadata.capitalize(entry.key),
+                      count: entry.value.length,
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: ArcadeColors.surface,
+                        border: Border.all(color: ArcadeColors.border),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < entry.value.length; i++)
+                            _WidgetRow(
+                              widget: entry.value[i],
+                              showDivider: i != entry.value.length - 1,
+                            ),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      children: entry.value.asMap().entries.map((widgetEntry) {
-                        final index = widgetEntry.key;
-                        final widget = widgetEntry.value;
-                        final isLast = index == entry.value.length - 1;
-
-                        return _ComponentListItem(
-                          widget: widget,
-                          showDivider: !isLast,
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 32),
+                  ],
                 ],
-              );
-            }),
-          ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _ComponentListItem extends StatelessWidget {
-  final WidgetMetadata widget;
-  final bool showDivider;
+class _GroupHeader extends StatelessWidget {
+  final String title;
+  final int count;
 
-  const _ComponentListItem({required this.widget, this.showDivider = true});
+  const _GroupHeader({required this.title, required this.count});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () =>
-          context.navigate(
-            Uri.parse('/widgets/${widget.identifier.replaceAll('_', '-')}'),
-          ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          border: showDivider
-              ? Border(
-                  bottom: BorderSide(
-                    color: Theme.of(
-                      context,
-                    ).dividerColor.withValues(alpha: 0.1),
-                  ),
-                )
-              : null,
+    return Row(
+      children: [
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              widget.name,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+        const SizedBox(width: 10),
+        Text(
+          '$count',
+          style: const TextStyle(
+            color: ArcadeColors.muted,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WidgetRow extends StatelessWidget {
+  final WidgetMetadata widget;
+  final bool showDivider;
+
+  const _WidgetRow({required this.widget, required this.showDivider});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => unawaited(useRouter(context).push(widget.routePath)),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 68),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          decoration: BoxDecoration(
+            border: showDivider
+                ? const Border(bottom: BorderSide(color: ArcadeColors.border))
+                : null,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.description,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: ArcadeColors.muted,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Row(
-              children: [
-                Text(
-                  'View',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.arrow_forward,
-                  size: 16,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(width: 18),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                size: 18,
+                color: ArcadeColors.muted,
+              ),
+            ],
+          ),
         ),
       ),
     );

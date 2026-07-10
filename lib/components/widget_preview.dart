@@ -1,16 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../services/widget_loader.dart';
+
 import '../models/widget_metadata.dart';
+import '../services/widget_loader.dart';
+import '../theme/arcade_theme.dart';
 
-/// A component that displays a widget preview with tabs for Preview and Code view.
-/// Supports responsive sizing: square on mobile, 16:9 on desktop.
 class WidgetPreview extends StatefulWidget {
-  /// Widget identifier (e.g., "cards/three_d_card")
   final String identifier;
-
-  /// Optional custom preview widget
   final Widget? previewWidget;
 
   const WidgetPreview({
@@ -25,230 +23,186 @@ class WidgetPreview extends StatefulWidget {
 
 class _WidgetPreviewState extends State<WidgetPreview>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  late final TabController _tabController;
   WidgetMetadata? _metadata;
-  String? _sourceCode;
-  bool _isLoading = true;
-  bool _isCodeTabSelected = false;
+  String? _demoCode;
+  bool _loading = true;
   bool _copied = false;
+  int _loadId = 0;
+  Timer? _copyTimer;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(_onTabChanged);
-    _loadWidget();
+    unawaited(_load());
+  }
+
+  @override
+  void didUpdateWidget(covariant WidgetPreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.identifier != widget.identifier) {
+      unawaited(_load());
+    }
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
+    _copyTimer?.cancel();
     _tabController.dispose();
     super.dispose();
   }
 
-  void _onTabChanged() {
-    if (!mounted) return;
+  Future<void> _load() async {
+    final loadId = ++_loadId;
+    final metadata = WidgetLoader.findByIdentifier(widget.identifier);
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _metadata = metadata;
+        _demoCode = null;
+        _copied = false;
+      });
+    }
+
+    final code = metadata == null
+        ? null
+        : await WidgetLoader.loadDemoCode(metadata);
+    if (!mounted || loadId != _loadId) return;
     setState(() {
-      _isCodeTabSelected = _tabController.index == 1;
+      _demoCode = code;
+      _loading = false;
     });
   }
 
-  Future<void> _loadWidget() async {
+  Future<void> _copy() async {
+    final code = _demoCode;
+    if (code == null) return;
+    await Clipboard.setData(ClipboardData(text: code));
     if (!mounted) return;
-    setState(() => _isLoading = true);
-
-    final metadata = WidgetLoader.findByIdentifier(widget.identifier);
-    if (metadata != null) {
-      // Load DEMO code instead of source code for the Code tab
-      final code = await WidgetLoader.loadDemoCode(metadata);
-      if (!mounted) return;
-      setState(() {
-        _metadata = metadata;
-        _sourceCode = code;
-        _isLoading = false;
-      });
-    } else {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _copyToClipboard() async {
-    if (_sourceCode == null) return;
-    await Clipboard.setData(ClipboardData(text: _sourceCode!));
-    if (mounted) {
-      setState(() => _copied = true);
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() => _copied = false);
-        }
-      });
-    }
+    _copyTimer?.cancel();
+    setState(() => _copied = true);
+    _copyTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _copied = false);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_metadata == null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text('Widget not found: ${widget.identifier}'),
-        ),
+    if (_loading) {
+      return const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
       );
     }
+    if (_metadata == null) {
+      return Text('Widget not found: ${widget.identifier}');
+    }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Material(
-      type: MaterialType.transparency,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Theme.of(context).dividerColor),
+    final height = MediaQuery.sizeOf(context).width < 700 ? 430.0 : 500.0;
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: ArcadeColors.surface,
+        border: Border.all(color: ArcadeColors.border),
+        borderRadius: BorderRadius.circular(10),
       ),
       clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        height: 400,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Tab bar with copy button
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                border: Border(
-                  bottom: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-              ),
-              child: Row(
-                children: [
-                  // Tabs on the left
-                  TabBar(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 48,
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: ArcadeColors.border)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TabBar(
                     controller: _tabController,
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
                     dividerColor: Colors.transparent,
+                    labelColor: ArcadeColors.violet,
+                    unselectedLabelColor: ArcadeColors.muted,
+                    indicatorColor: ArcadeColors.violet,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    labelStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
                     tabs: const [
                       Tab(text: 'Preview'),
                       Tab(text: 'Code'),
                     ],
                   ),
-                  const Spacer(),
-                  // Copy button on the right (only visible when Code tab is selected)
-                  AnimatedOpacity(
-                    opacity: _isCodeTabSelected ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: AnimatedSlide(
-                      offset: _isCodeTabSelected
-                          ? Offset.zero
-                          : const Offset(0.2, 0),
-                      duration: const Duration(milliseconds: 200),
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: InkWell(
-                          onTap: _isCodeTabSelected ? _copyToClipboard : null,
-                          borderRadius: BorderRadius.circular(6),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _copied
-                                      ? Icons.check_rounded
-                                      : Icons.copy_rounded,
-                                  size: 16,
-                                  color: _copied
-                                      ? Colors.green
-                                      : (isDark
-                                            ? Colors.grey[400]
-                                            : Colors.grey[600]),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  _copied ? 'Copied!' : 'Copy',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: _copied
-                                        ? Colors.green
-                                        : (isDark
-                                              ? Colors.grey[400]
-                                              : Colors.grey[600]),
-                                  ),
-                                ),
-                              ],
-                            ),
+                ),
+                AnimatedBuilder(
+                  animation: _tabController,
+                  builder: (context, _) {
+                    if (_tabController.index != 1) {
+                      return const SizedBox(width: 12);
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: TextButton.icon(
+                        onPressed: _copy,
+                        icon: Icon(
+                          _copied ? Icons.check_rounded : Icons.copy_rounded,
+                          size: 16,
+                        ),
+                        label: Text(_copied ? 'Copied' : 'Copy'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: _copied
+                              ? ArcadeColors.aqua
+                              : ArcadeColors.muted,
+                          textStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                RepaintBoundary(
+                  child: ColoredBox(
+                    color: const Color(0xFF0A0B10),
+                    child: Center(
+                      child:
+                          widget.previewWidget ??
+                          const Text('Preview unavailable'),
                     ),
                   ),
-                ],
-              ),
+                ),
+                ColoredBox(
+                  color: const Color(0xFF0B0D12),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(18),
+                    child: SelectableText(
+                      _demoCode ?? '// Demo code unavailable',
+                      style: const TextStyle(
+                        color: Color(0xFFD4D5DC),
+                        fontFamily: 'monospace',
+                        fontSize: 12.5,
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            // Tab content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  // Preview tab
-                  _buildPreviewTab(),
-                  // Code tab
-                  _buildCodeTab(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPreviewTab() {
-    return Container(
-      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-      child: Center(
-        child:
-            widget.previewWidget ??
-            const Text(
-              'Preview widget not provided.\nPass previewWidget to WidgetPreview.',
-              textAlign: TextAlign.center,
-            ),
-      ),
-    );
-  }
-
-  Widget _buildCodeTab() {
-    if (_sourceCode == null) {
-      return const Center(child: Text('Source code not available'));
-    }
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Display code directly without header
-    return Container(
-      color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: SelectableText(
-          _sourceCode!,
-          style: GoogleFonts.firaCode(
-            fontSize: 13,
-            height: 1.6,
-            color: isDark ? Colors.grey[300] : Colors.grey[800],
           ),
-        ),
+        ],
       ),
     );
   }

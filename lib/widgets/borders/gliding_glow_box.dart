@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
@@ -17,7 +18,12 @@ class GlidingGlowBox extends StatefulWidget {
     this.borderWidth = 3.0,
     this.borderRadius,
     this.glowPadding = 0,
-  });
+  }) : assert(borderWidth > 0, 'borderWidth must be greater than 0'),
+       assert(
+         borderRadius == null || borderRadius >= 0,
+         'borderRadius must be non-negative',
+       ),
+       assert(glowPadding >= 0, 'glowPadding must be non-negative');
 
   @override
   State<GlidingGlowBox> createState() => _GlidingGlowBoxState();
@@ -25,45 +31,76 @@ class GlidingGlowBox extends StatefulWidget {
 
 class _GlidingGlowBoxState extends State<GlidingGlowBox>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  static const _frameInterval = Duration(milliseconds: 33);
+
+  late final AnimationController _controller;
+  final _repaint = _RepaintNotifier();
+  Duration _lastRepaintElapsed = Duration.zero;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.speed)
-      ..repeat(reverse: true);
+      ..addListener(_onAnimationTick);
+    unawaited(_controller.repeat(reverse: true));
+  }
+
+  void _onAnimationTick() {
+    final elapsed = _controller.lastElapsedDuration ?? Duration.zero;
+    if (elapsed - _lastRepaintElapsed < _frameInterval) return;
+    _lastRepaintElapsed = elapsed;
+    _repaint.notify();
+  }
+
+  @override
+  void didUpdateWidget(covariant GlidingGlowBox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.speed != widget.speed) {
+      _controller.duration = widget.speed;
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller
+      ..removeListener(_onAnimationTick)
+      ..dispose();
+    _repaint.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (animationsDisabled && _controller.isAnimating) {
+      _controller.stop();
+    } else if (!animationsDisabled && !_controller.isAnimating) {
+      _lastRepaintElapsed = Duration.zero;
+      unawaited(_controller.repeat(reverse: true));
+    }
+
     final inset = widget.borderWidth / 2 + widget.glowPadding;
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: _GlidingGlowBoxPainter(
-            progress: _controller.value,
-            color: widget.color,
-            borderWidth: widget.borderWidth,
-            borderRadius: widget.borderRadius,
-          ),
-          child: Padding(padding: EdgeInsets.all(inset), child: child),
-        );
-      },
-      child: widget.child,
+    return CustomPaint(
+      painter: _GlidingGlowBoxPainter(
+        progress: _controller,
+        color: widget.color,
+        borderWidth: widget.borderWidth,
+        borderRadius: widget.borderRadius,
+        repaint: _repaint,
+      ),
+      child: Padding(padding: EdgeInsets.all(inset), child: widget.child),
     );
   }
 }
 
+class _RepaintNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+
 class _GlidingGlowBoxPainter extends CustomPainter {
-  final double progress;
+  final Animation<double> progress;
   final Color color;
   final double borderWidth;
   final double? borderRadius;
@@ -73,7 +110,8 @@ class _GlidingGlowBoxPainter extends CustomPainter {
     required this.color,
     required this.borderWidth,
     required this.borderRadius,
-  });
+    required Listenable repaint,
+  }) : super(repaint: repaint);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -94,7 +132,7 @@ class _GlidingGlowBoxPainter extends CustomPainter {
         color.withValues(alpha: 0.0),
       ],
       stops: const [0.0, 0.32, 0.42, 0.5, 0.58, 0.74],
-      transform: GradientRotation(math.pi * 2 * progress),
+      transform: GradientRotation(math.pi * 2 * progress.value),
     );
 
     final glowPaint = Paint()
@@ -113,8 +151,8 @@ class _GlidingGlowBoxPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GlidingGlowBoxPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.color != color ||
-        oldDelegate.borderWidth != borderWidth;
+    return oldDelegate.color != color ||
+        oldDelegate.borderWidth != borderWidth ||
+        oldDelegate.borderRadius != borderRadius;
   }
 }

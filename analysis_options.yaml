@@ -1,1 +1,11 @@
 include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+
+linter:
+  rules:
+    - cancel_subscriptions
+    - discarded_futures
+    - unawaited_futures

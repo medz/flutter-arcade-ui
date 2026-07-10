@@ -2,12 +2,12 @@
   "private": true,
   "homepage": "https://arcade.medz.dev",
   "scripts": {
-    "types": "wrangler types",
-    "build": "flutter build web --wasm",
+    "build": "flutter build web --wasm --no-web-resources-cdn",
+    "check": "flutter analyze && flutter test && bun run build && wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
     "predeploy": "bun run build"
   },
-  "dependencies": {
-    "wrangler": "^4.51.0"
+  "devDependencies": {
+    "wrangler": "^4.110.0"
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
@@ -17,7 +18,8 @@ class BlackHoleBackground extends StatefulWidget {
     this.numberOfDiscs = 50,
     this.particleColor = const Color(0x33FFFFFF),
     this.child,
-  });
+  }) : assert(numberOfLines > 0, 'numberOfLines must be greater than 0'),
+       assert(numberOfDiscs > 0, 'numberOfDiscs must be greater than 0');
 
   @override
   State<BlackHoleBackground> createState() => _BlackHoleBackgroundState();
@@ -29,11 +31,12 @@ class _RepaintNotifier extends ChangeNotifier {
 
 class _BlackHoleBackgroundState extends State<BlackHoleBackground>
     with SingleTickerProviderStateMixin {
+  static const _frameInterval = Duration(milliseconds: 33);
+
   late Ticker _ticker;
   final _repaintNotifier = _RepaintNotifier();
 
   List<_Disc> _discs = [];
-  List<List<_Point>> _lines = [];
   List<_Particle> _particles = [];
   _Clip _clip = _Clip();
   _Disc _startDisc = _Disc(p: 0, x: 0, y: 0, w: 0, h: 0);
@@ -43,11 +46,23 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
   ui.Picture? _linesPicture;
 
   final math.Random _random = math.Random();
+  Duration? _lastUpdateElapsed;
 
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(_tick)..start();
+    _ticker = createTicker(_tick);
+    unawaited(_ticker.start());
+  }
+
+  @override
+  void didUpdateWidget(covariant BlackHoleBackground oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.numberOfLines != widget.numberOfLines ||
+        oldWidget.numberOfDiscs != widget.numberOfDiscs ||
+        oldWidget.strokeColor != widget.strokeColor) {
+      _init();
+    }
   }
 
   @override
@@ -119,7 +134,6 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
       if (bottom <= prevBottom) {
         _clip = _Clip(
           disc: _Disc(p: disc.p, x: disc.x, y: disc.y, w: disc.w, h: disc.h),
-          i: i,
         );
       }
       prevBottom = bottom;
@@ -146,11 +160,8 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
     final height = _rect.height;
     if (width <= 0 || height <= 0) return;
 
-    _lines = [];
     final linesAngle = (math.pi * 2) / widget.numberOfLines;
-    for (int i = 0; i < widget.numberOfLines; i++) {
-      _lines.add([]);
-    }
+    final lines = List.generate(widget.numberOfLines, (_) => <_Point>[]);
 
     for (var disc in _discs) {
       for (int i = 0; i < widget.numberOfLines; i++) {
@@ -159,7 +170,7 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
           x: disc.x + math.cos(angle) * disc.w,
           y: disc.y + math.sin(angle) * disc.h,
         );
-        _lines[i].add(point);
+        lines[i].add(point);
       }
     }
 
@@ -178,19 +189,18 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
-    for (var line in _lines) {
+    for (final line in lines) {
       canvas.save();
-      bool lineIsIn = false;
-      for (int j = 0; j < line.length; j++) {
-        if (j == 0) continue;
-        final p0 = line[j - 1];
-        final p1 = line[j];
-        if (!lineIsIn && _isPointInClipPath(p1.x, p1.y)) {
+      var lineIsIn = false;
+      for (var i = 1; i < line.length; i++) {
+        final start = line[i - 1];
+        final end = line[i];
+        if (!lineIsIn && _isPointInClipPath(end.x, end.y)) {
           lineIsIn = true;
         } else if (lineIsIn) {
           canvas.clipPath(_clip.path!);
         }
-        canvas.drawLine(Offset(p0.x, p0.y), Offset(p1.x, p1.y), paint);
+        canvas.drawLine(Offset(start.x, start.y), Offset(end.x, end.y), paint);
       }
       canvas.restore();
     }
@@ -199,23 +209,15 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
   }
 
   bool _isPointInClipPath(double x, double y) {
-    if (_clip.disc == null) return false;
-    final disc = _clip.disc!;
+    final disc = _clip.disc;
+    if (disc == null) return false;
 
     final dx = (x - disc.x) / disc.w;
     final dy = (y - disc.y) / disc.h;
-    final ellipseValue = dx * dx + dy * dy;
-    final sqrtV = math.sqrt(ellipseValue);
-
-    if (sqrtV <= 1.0) return true;
-    final distToEdge = (sqrtV - 1.0) * math.min(disc.w, disc.h);
-    if (distToEdge <= 0.2) return true;
-
-    if (y < disc.y && x >= disc.x - disc.w && x <= disc.x + disc.w) {
-      return true;
-    }
-
-    return false;
+    final distance = math.sqrt(dx * dx + dy * dy);
+    if (distance <= 1) return true;
+    if ((distance - 1) * math.min(disc.w, disc.h) <= 0.2) return true;
+    return y < disc.y && x >= disc.x - disc.w && x <= disc.x + disc.w;
   }
 
   _Particle _initParticle({bool start = false}) {
@@ -230,7 +232,7 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
         ? (_particleArea.h ?? 0) * _random.nextDouble()
         : (_particleArea.h ?? 0);
     final r = 0.5 + _random.nextDouble() * 4;
-    final vy = 0.5 + _random.nextDouble();
+    final vy = 30 + _random.nextDouble() * 60;
     return _Particle(
       x: sx,
       sx: sx,
@@ -261,19 +263,19 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
     }
   }
 
-  void _moveDiscs() {
+  void _moveDiscs(double deltaSeconds) {
     for (var disc in _discs) {
-      disc.p = (disc.p + 0.001) % 1;
+      disc.p = (disc.p + 0.06 * deltaSeconds) % 1;
       _tweenDisc(disc);
     }
   }
 
-  void _moveParticles() {
+  void _moveParticles(double deltaSeconds) {
     for (int i = 0; i < _particles.length; i++) {
       final particle = _particles[i];
       particle.p = 1 - particle.y / (_particleArea.h ?? 1);
       particle.x = particle.sx + particle.dx * particle.p;
-      particle.y -= particle.vy;
+      particle.y -= particle.vy * deltaSeconds;
       if (particle.y < 0) {
         _particles[i] = _initParticle();
       }
@@ -282,13 +284,20 @@ class _BlackHoleBackgroundState extends State<BlackHoleBackground>
 
   void _tick(Duration elapsed) {
     if (_rect == Size.zero) return;
-    _moveDiscs();
-    _moveParticles();
+    final previous = _lastUpdateElapsed;
+    if (previous != null && elapsed - previous < _frameInterval) return;
+    _lastUpdateElapsed = elapsed;
+    final deltaSeconds = previous == null
+        ? 1 / 30
+        : math.min((elapsed - previous).inMicroseconds / 1000000, 0.05);
+    _moveDiscs(deltaSeconds);
+    _moveParticles(deltaSeconds);
     _repaintNotifier.notify();
   }
 
   @override
   Widget build(BuildContext context) {
+    _ticker.muted = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return LayoutBuilder(
       builder: (context, constraints) {
         _setSize(Size(constraints.maxWidth, constraints.maxHeight));
@@ -459,10 +468,9 @@ class _Particle {
 
 class _Clip {
   _Disc? disc;
-  int? i;
   Path? path;
 
-  _Clip({this.disc, this.i});
+  _Clip({this.disc});
 }
 
 class _ParticleArea {

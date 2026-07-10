@@ -1,79 +1,79 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:unrouter/unrouter.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:unrouter/flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../services/widget_loader.dart';
+
+import '../../components/arcade_brand.dart';
 import '../../models/widget_metadata.dart';
+import '../../services/widget_loader.dart';
+import '../../theme/arcade_theme.dart';
 import 'docs_search_delegate.dart';
 
+const _githubUrl = 'https://github.com/medz/flutter-arcade-ui';
+
 class DocsShell extends StatelessWidget {
-  const DocsShell({super.key});
+  final Widget? child;
+
+  const DocsShell({super.key, this.child});
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width >= 900;
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Icon(Icons.widgets, size: 24),
-            const SizedBox(width: 12),
-            Text(
-              'Arcade UI',
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-            const SizedBox(width: 32),
-            const SizedBox(width: 32),
-          ],
-        ),
+        toolbarHeight: 64,
+        titleSpacing: isDesktop ? 28 : 0,
+        title: const ArcadeBrand(),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            tooltip: 'Search widgets',
+            icon: const Icon(Icons.search_rounded),
             onPressed: () {
-              showSearch(context: context, delegate: DocsSearchDelegate());
+              unawaited(
+                showSearch(context: context, delegate: DocsSearchDelegate()),
+              );
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(Icons.code),
-            onPressed: () => launchUrl(
-              Uri.parse('https://github.com/medz/flutter-arcade-ui'),
+            tooltip: 'Open GitHub',
+            icon: const Icon(Icons.code_rounded),
+            onPressed: () => unawaited(
+              launchUrl(
+                Uri.parse(_githubUrl),
+                mode: LaunchMode.externalApplication,
+              ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: isDesktop ? 22 : 10),
         ],
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-            height: 1,
-          ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1),
         ),
       ),
-      drawer: !isDesktop ? const Drawer(child: DocsSidebar()) : null,
+      drawer: isDesktop
+          ? null
+          : const Drawer(
+              width: 300,
+              backgroundColor: ArcadeColors.canvas,
+              child: SafeArea(child: DocsSidebar()),
+            ),
       body: Row(
         children: [
           if (isDesktop)
-            Container(
+            const SizedBox(
               width: 280,
-              decoration: BoxDecoration(
-                border: Border(
-                  right: BorderSide(
-                    color: Theme.of(
-                      context,
-                    ).dividerColor.withValues(alpha: 0.1),
-                  ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(right: BorderSide(color: ArcadeColors.border)),
                 ),
+                child: DocsSidebar(),
               ),
-              child: const DocsSidebar(),
             ),
-          const Expanded(child: Outlet()),
+          Expanded(child: child ?? const Outlet()),
         ],
       ),
     );
@@ -85,84 +85,56 @@ class DocsSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentPath = context.location.uri.path;
+    final currentPath = useRouteURI(context).path;
 
-    return Container(
-      width: 280,
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(color: Theme.of(context).dividerColor),
-        ),
-      ),
-      child: Column(
+    return Scrollbar(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SidebarLink(
-                    title: 'Home',
-                    icon: Icons.home_outlined,
-                    isSelected: currentPath == '/',
-                    onTap: () => context.navigate(Uri.parse('/')),
-                  ),
-                  const SizedBox(height: 8),
-                  _SidebarLink(
-                    title: 'Getting Started',
-                    icon: Icons.rocket_launch_outlined,
-                    isSelected: currentPath == '/get-started',
-                    onTap: () => context.navigate(Uri.parse('/get-started')),
-                  ),
-                  const SizedBox(height: 8),
-                  _SidebarLink(
-                    title: 'Widgets',
-                    icon: Icons.widgets_outlined,
-                    isSelected: currentPath == '/widgets',
-                    onTap: () => context.navigate(Uri.parse('/widgets')),
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 1),
-                  const SizedBox(height: 16),
-                  ...WidgetLoader.groups.map((group) {
-                    final widgets = WidgetLoader.getWidgetsByGroup(group);
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 12,
-                          ),
-                          child: Text(
-                            WidgetMetadata.capitalize(group),
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                        ...widgets.map((widget) {
-                          final path =
-                              '/widgets/${widget.identifier.replaceAll('_', '-')}';
-                          return _SidebarLink(
-                            title: widget.name,
-                            isSelected: currentPath == path,
-                            isSubItem: true,
-                            onTap: () =>
-                                context.navigate(Uri.parse(path)),
-                          );
-                        }),
-                        const SizedBox(height: 16),
-                      ],
-                    );
-                  }),
-                ],
+          _SidebarLink(
+            title: 'Home',
+            icon: Icons.home_outlined,
+            isSelected: currentPath == '/',
+            onTap: () => _navigate(context, '/'),
+          ),
+          _SidebarLink(
+            title: 'Getting Started',
+            icon: Icons.rocket_launch_outlined,
+            isSelected: currentPath == '/get-started',
+            onTap: () => _navigate(context, '/get-started'),
+          ),
+          _SidebarLink(
+            title: 'Widgets',
+            icon: Icons.grid_view_rounded,
+            isSelected: currentPath == '/widgets',
+            onTap: () => _navigate(context, '/widgets'),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1),
+          ),
+          for (final group in WidgetLoader.groups) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+              child: Text(
+                WidgetMetadata.capitalize(group).toUpperCase(),
+                style: const TextStyle(
+                  color: ArcadeColors.violet,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.9,
+                ),
               ),
             ),
-          ),
+            for (final widget in WidgetLoader.getWidgetsByGroup(group))
+              _SidebarLink(
+                title: widget.name,
+                isSubItem: true,
+                isSelected: currentPath == widget.routePath,
+                onTap: () => _navigate(context, widget.routePath),
+              ),
+            const SizedBox(height: 12),
+          ],
         ],
       ),
     );
@@ -178,59 +150,70 @@ class _SidebarLink extends StatelessWidget {
 
   const _SidebarLink({
     required this.title,
+    required this.onTap,
     this.icon,
     this.isSelected = false,
     this.isSubItem = false,
-    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textColor = isSelected
-        ? colorScheme.primary
-        : colorScheme.onSurface.withValues(alpha: 0.7);
+    final color = isSelected ? ArcadeColors.text : ArcadeColors.muted;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          vertical: 8,
-          horizontal: isSubItem ? 12 : 12,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary.withValues(alpha: 0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          children: [
-            if (isSubItem) const SizedBox(width: 8),
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-              const SizedBox(width: 12),
-            ],
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: textColor,
-                ),
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Material(
+        color: isSelected
+            ? ArcadeColors.violet.withValues(alpha: 0.16)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(7),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(7),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 42),
+            padding: EdgeInsets.symmetric(
+              horizontal: isSubItem ? 14 : 12,
+              vertical: 9,
             ),
-          ],
+            decoration: BoxDecoration(
+              border: isSelected
+                  ? const Border(
+                      left: BorderSide(color: ArcadeColors.violet, width: 3),
+                    )
+                  : null,
+            ),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 19, color: color),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 14,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+void _navigate(BuildContext context, String path) {
+  final scaffold = Scaffold.maybeOf(context);
+  if (scaffold?.isDrawerOpen ?? false) scaffold!.closeDrawer();
+  unawaited(useRouter(context).replace(path));
 }

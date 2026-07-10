@@ -1,108 +1,96 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:unrouter/unrouter.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../services/widget_loader.dart';
+import 'package:unrouter/flutter.dart';
+
 import '../../models/widget_metadata.dart';
+import '../../services/widget_loader.dart';
+import '../../theme/arcade_theme.dart';
 
 class DocsSearchDelegate extends SearchDelegate<WidgetMetadata?> {
   @override
-  List<Widget>? buildActions(BuildContext context) {
+  String get searchFieldLabel => 'Search widgets';
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
     return [
       if (query.isNotEmpty)
         IconButton(
-          icon: const Icon(Icons.clear),
-          onPressed: () {
-            query = '';
-            showSuggestions(context);
-          },
+          tooltip: 'Clear search',
+          icon: const Icon(Icons.close_rounded),
+          onPressed: () => query = '',
         ),
     ];
   }
 
   @override
-  Widget? buildLeading(BuildContext context) {
+  Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.arrow_back),
+      tooltip: 'Close search',
+      icon: const Icon(Icons.arrow_back_rounded),
       onPressed: () => close(context, null),
     );
   }
 
   @override
-  Widget buildResults(BuildContext context) {
-    return _buildSearchResults(context);
-  }
+  Widget buildResults(BuildContext context) => _buildResults(context);
 
   @override
-  Widget buildSuggestions(BuildContext context) {
-    return _buildSearchResults(context);
-  }
+  Widget buildSuggestions(BuildContext context) => _buildResults(context);
 
-  Widget _buildSearchResults(BuildContext context) {
-    final results = WidgetLoader.search(query);
-
+  Widget _buildResults(BuildContext context) {
+    final results = WidgetLoader.search(query.trim());
     if (results.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No results found for "$query"',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.7),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.search_off_rounded,
+                size: 48,
+                color: ArcadeColors.muted,
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                query.isEmpty
+                    ? 'Type to search the widget gallery.'
+                    : 'No widgets match “$query”.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: ArcadeColors.muted, fontSize: 15),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       itemCount: results.length,
-      separatorBuilder: (context, index) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final widget = results[index];
         return ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 4,
+          ),
           title: Text(
             widget.name,
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           subtitle: Text(
             widget.description,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
+            style: const TextStyle(color: ArcadeColors.muted, fontSize: 13),
           ),
-          trailing: Icon(
-            Icons.chevron_right,
-            size: 16,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
+          trailing: const Icon(Icons.arrow_forward_rounded, size: 18),
           onTap: () {
             close(context, widget);
-            context.navigate(
-              Uri.parse(
-                '/widgets/${widget.identifier.replaceAll('_', '-')}',
-              ),
-            );
+            unawaited(useRouter(context).push(widget.routePath));
           },
         );
       },
@@ -114,19 +102,11 @@ class DocsSearchDelegate extends SearchDelegate<WidgetMetadata?> {
     final theme = Theme.of(context);
     return theme.copyWith(
       appBarTheme: theme.appBarTheme.copyWith(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        iconTheme: theme.iconTheme.copyWith(color: theme.colorScheme.onSurface),
-        titleTextStyle: GoogleFonts.inter(
-          color: theme.colorScheme.onSurface,
-          fontSize: 18,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: InputBorder.none,
-        hintStyle: GoogleFonts.inter(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+        backgroundColor: ArcadeColors.canvas,
+        titleTextStyle: const TextStyle(
+          color: ArcadeColors.text,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:unrouter/unrouter.dart';
-// ignore: implementation_imports
-import 'package:unrouter/src/router/url_strategy.dart';
+import 'package:unrouter/flutter.dart';
+
 import 'pages/home_page.dart';
 import 'pages/docs/docs_index_page.dart';
 import 'pages/docs/getting_started_page.dart';
-
 import 'pages/docs/widget_detail_page.dart';
 import 'pages/docs/docs_shell.dart';
-
+import 'services/docs_loader.dart';
+import 'services/browser_history.dart';
 import 'services/widget_loader.dart';
+import 'theme/arcade_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialize widget loader
   await WidgetLoader.initialize();
-
+  await DocsLoader.preload([
+    'getting-started',
+    ...WidgetLoader.widgets.map((widget) => widget.docPath).nonNulls,
+  ]);
   runApp(const App());
 }
 
@@ -25,46 +27,47 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Fluter Arcade UI',
-      theme: ThemeData.from(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      darkTheme: ThemeData.from(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.dark,
-        ),
-      ),
-      themeMode: ThemeMode.system,
-      routerConfig: _router,
+      title: 'Flutter Arcade UI',
+      debugShowCheckedModeBanner: false,
+      theme: createArcadeTheme(),
+      routerConfig: createRouterConfig(_router),
     );
   }
 }
 
-final _router = Unrouter(
-  strategy: UrlStrategy.browser,
-  routes: const [
-    Inlet(factory: HomePage.new),
+final _router = createRouter(
+  history: BrowserHistory(),
+  routes: [
+    Inlet(path: '/', view: HomePage.new),
+    Inlet(path: '/get-started', view: _GettingStartedRoute.new),
     Inlet(
-      factory: DocsShell.new,
+      path: '/widgets',
+      view: DocsShell.new,
       children: [
-        Inlet(path: 'get-started', factory: GettingStartedPage.new),
-        Inlet(path: 'widgets', factory: DocsIndexPage.new),
-        Inlet(path: 'widgets/:group/:name', factory: _WidgetDetailRoute.new),
+        Inlet(path: '/', view: DocsIndexPage.new),
+        Inlet(path: ':group/:name', view: _WidgetDetailRoute.new),
       ],
     ),
   ],
 );
+
+class _GettingStartedRoute extends StatelessWidget {
+  const _GettingStartedRoute();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DocsShell(child: GettingStartedPage());
+  }
+}
 
 class _WidgetDetailRoute extends StatelessWidget {
   const _WidgetDetailRoute({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final group = context.params['group']!;
-    final name = context.params['name']!;
+    final params = useRouteParams(context);
+    final group = params.required('group');
+    final name = params.required('name');
     return WidgetDetailPage(group: group, name: name);
   }
 }

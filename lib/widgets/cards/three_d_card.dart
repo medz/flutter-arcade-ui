@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 const double _kDegreesToRadians = 0.0174533;
@@ -57,12 +59,37 @@ class ThreeDCard extends StatefulWidget {
   State<ThreeDCard> createState() => _ThreeDCardState();
 }
 
-class _ThreeDCardState extends State<ThreeDCard> {
+class _ThreeDCardState extends State<ThreeDCard>
+    with SingleTickerProviderStateMixin {
   bool _isHovered = false;
-  double _rotationX = 0.0;
-  double _rotationY = 0.0;
-  DateTime _lastHoverUpdate = DateTime.now();
+  late final AnimationController _controller;
+  Animation<Offset> _rotation = const AlwaysStoppedAnimation(Offset.zero);
+  DateTime _lastHoverUpdate = DateTime.fromMillisecondsSinceEpoch(0);
   static const _hoverThrottleMs = 16;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+  }
+
+  @override
+  void didUpdateWidget(covariant ThreeDCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.duration != widget.duration) {
+      _controller.duration = widget.duration;
+    }
+    if (oldWidget.enabled && !widget.enabled) {
+      _isHovered = false;
+      _animateTo(Offset.zero);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   void _handleHoverStart() {
     if (!widget.enabled) return;
@@ -72,11 +99,8 @@ class _ThreeDCardState extends State<ThreeDCard> {
 
   void _handleHoverEnd() {
     if (!widget.enabled) return;
-    setState(() {
-      _isHovered = false;
-      _rotationX = 0.0;
-      _rotationY = 0.0;
-    });
+    setState(() => _isHovered = false);
+    _animateTo(Offset.zero);
     widget.onHoverEnd?.call();
   }
 
@@ -98,10 +122,20 @@ class _ThreeDCardState extends State<ThreeDCard> {
     final x = (event.localPosition.dx - centerX) / widget.sensitivity;
     final y = (event.localPosition.dy - centerY) / widget.sensitivity;
 
-    setState(() {
-      _rotationX = (-y).clamp(-widget.maxRotationX, widget.maxRotationX);
-      _rotationY = x.clamp(-widget.maxRotationY, widget.maxRotationY);
-    });
+    _animateTo(
+      Offset(
+        x.clamp(-widget.maxRotationY, widget.maxRotationY),
+        (-y).clamp(-widget.maxRotationX, widget.maxRotationX),
+      ),
+    );
+  }
+
+  void _animateTo(Offset target) {
+    _rotation = Tween<Offset>(
+      begin: _rotation.value,
+      end: target,
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
+    unawaited(_controller.forward(from: 0));
   }
 
   @override
@@ -112,36 +146,26 @@ class _ThreeDCardState extends State<ThreeDCard> {
       onHover: _handleHover,
       child: ThreeDCardData(
         isHovered: _isHovered,
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0, end: _rotationX),
-          duration: widget.duration,
-          curve: widget.curve,
-          builder: (context, rx, _) {
-            return TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: _rotationY),
-              duration: widget.duration,
-              curve: widget.curve,
-              builder: (context, ry, child) {
-                return Transform(
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.001)
-                    ..rotateX(rx * _kDegreesToRadians)
-                    ..rotateY(ry * _kDegreesToRadians),
-                  alignment: Alignment.center,
-                  child: AnimatedContainer(
-                    duration: widget.duration,
-                    curve: widget.curve,
-                    decoration: _isHovered && widget.hoverDecoration != null
-                        ? _mergeDecorations(
-                            widget.decoration,
-                            widget.hoverDecoration!,
-                          )
-                        : widget.decoration,
-                    padding: widget.padding,
-                    child: widget.child,
-                  ),
-                );
-              },
+        child: AnimatedBuilder(
+          animation: _controller,
+          child: AnimatedContainer(
+            duration: widget.duration,
+            curve: widget.curve,
+            decoration: _isHovered && widget.hoverDecoration != null
+                ? _mergeDecorations(widget.decoration, widget.hoverDecoration!)
+                : widget.decoration,
+            padding: widget.padding,
+            child: widget.child,
+          ),
+          builder: (context, child) {
+            final rotation = _rotation.value;
+            return Transform(
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.001)
+                ..rotateX(rotation.dy * _kDegreesToRadians)
+                ..rotateY(rotation.dx * _kDegreesToRadians),
+              alignment: Alignment.center,
+              child: child,
             );
           },
         ),
